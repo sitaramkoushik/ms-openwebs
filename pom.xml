@@ -23,7 +23,7 @@
 		<dependency>
 			<groupId>com.alliance</groupId>
 			<artifactId>MSParentUtil</artifactId>
-			<version>00.03.00</version>
+			<version>${msParentUtilVersion}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

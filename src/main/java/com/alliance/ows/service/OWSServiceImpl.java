@@ -35,7 +35,7 @@ import com.alliance.ows.handler.InquiryHandler;
 import com.alliance.ows.handler.OrderHandler;
 import com.alliance.ows.handler.OwsXmlGenerator;
 import com.alliance.ows.model.Quantity;
-import com.alliance.ows.model.inquire.InquiryReqestData;
+import com.alliance.ows.model.inquire.InquiryRequestData;
 import com.alliance.ows.model.inquire.InquiryRequestPart;
 import com.alliance.ows.model.inquire.InquiryResponseData;
 import com.alliance.ows.model.order.OrderRequestData;
@@ -101,7 +101,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	}
 
 	public String prepareOwsInqReqData(List<InquiryRequestPart> partData) throws ParserConfigurationException, TransformerException {
-		InquiryReqestData inqReqData = new InquiryReqestData();
+		InquiryRequestData inqReqData = new InquiryRequestData();
 		inqReqData.setPart(partData);
 		String token = getTokenByOrgId("DummyOrg");
 		inqReqData.settoken(token);

@@ -8,7 +8,7 @@ import java.util.List;
  * @author Krishna Kumar
  * 
  */
-public class InquiryReqestData implements Serializable {
+public class InquiryRequestData implements Serializable {
 
 	private static final long serialVersionUID = 4549102110679275275L;
 	private String token;
