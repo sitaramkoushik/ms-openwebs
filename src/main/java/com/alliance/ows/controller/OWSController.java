@@ -4,9 +4,9 @@ import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alliance.EchoController;
@@ -26,12 +26,16 @@ public class OWSController extends EchoController {
 	@Autowired
 	private OWSServiceInterface owsService;
 
+	
 	@SuppressWarnings("unchecked")
 	@RequestMapping(value = "/inquiry", method = RequestMethod.POST)
 	@ResponseBody
-	public String doOWSInq(@RequestBody String bodyString) {
+	public String doOWSInq(
+			@RequestParam(value = "reqData", required = true) String reqData,
+			@RequestParam(value = "userName", required = false) String userName,
+			@RequestParam(value = "password", required = false) String password) {
 		try {
-			return owsService.doOWSInq(bodyString);
+			return owsService.doOWSInq(reqData);
 		} catch (Exception e) {
 			JSONObject respJson = new JSONObject();
 			respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
@@ -43,9 +47,12 @@ public class OWSController extends EchoController {
 	@SuppressWarnings("unchecked")
 	@RequestMapping(value = "/order", method = RequestMethod.POST)
 	@ResponseBody
-	public String doOWSOrder(@RequestBody String bodyString) {
+	public String doOWSOrder(
+			@RequestParam(value = "reqData", required = true) String reqData,
+			@RequestParam(value = "userName", required = false) String userName,
+			@RequestParam(value = "password", required = false) String password) {
 		try {
-			return owsService.doOWSOrder(bodyString);
+			return owsService.doOWSOrder(reqData);
 		} catch (Exception e) {
 			JSONObject respJson = new JSONObject();
 			respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
