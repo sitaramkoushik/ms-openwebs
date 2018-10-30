@@ -134,30 +134,38 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		JSONObject respJson = new JSONObject();
 		try {
 			HttpResponse response = getHttpResponse(requestData, sellNetworkURL);
-			JSONObject json = new JSONObject(EntityUtils.toString(response.getEntity()));
-			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK
-							&& json.getString(ConstantsUtility.STATUS).equals(ConstantsUtility.SUCCESS)) {
-
-				String result = "";
-
-				switch (reqType) {
-				case INQ:
-					result = inqRespParseToXml(json.toString(), envelopeData);
-					break;
-
-				case ORD:
-					result = orderRespParseToXml(json.toString());
-					break;
-
-				default:
-					result = inqRespParseToXml(json.toString(), envelopeData);
-					break;
+			if (response.getEntity() != null) {
+				long contentLength = response.getEntity().getContentLength();
+				if (contentLength == 0) {
+					respJson.put(ConstantsUtility.STATUS, ConstantsUtility.SUCCESS);
+					respJson.put(ConstantsUtility.MESSAGE, "Parts Not Found");
 				}
-				respJson.put(ConstantsUtility.STATUS, ConstantsUtility.SUCCESS);
-				respJson.put(ConstantsUtility.MESSAGE, result);
 			} else {
-				respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
-				respJson.put(ConstantsUtility.MESSAGE, json.getString(ConstantsUtility.ERROR));
+				JSONObject json = new JSONObject(EntityUtils.toString(response.getEntity()));
+				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK
+								&& json.getString(ConstantsUtility.STATUS).equals(ConstantsUtility.SUCCESS)) {
+
+					String result = "";
+
+					switch (reqType) {
+					case INQ:
+						result = inqRespParseToXml(json.toString(), envelopeData);
+						break;
+
+					case ORD:
+						result = orderRespParseToXml(json.toString());
+						break;
+
+					default:
+						result = inqRespParseToXml(json.toString(), envelopeData);
+						break;
+					}
+					respJson.put(ConstantsUtility.STATUS, ConstantsUtility.SUCCESS);
+					respJson.put(ConstantsUtility.MESSAGE, result);
+				} else {
+					respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
+					respJson.put(ConstantsUtility.MESSAGE, json.getString(ConstantsUtility.ERROR));
+				}
 			}
 		} catch (ParseException | JSONException e) {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
