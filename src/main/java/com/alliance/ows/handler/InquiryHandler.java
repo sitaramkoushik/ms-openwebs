@@ -128,10 +128,15 @@ public class InquiryHandler extends DefaultHandler {
 			envelopeData.setEnvAttrName("xmlns:" + prefix);
 			envelopeData.setEnvAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("ow-o")) {
-			addReqForQuote = new AddRequestForQuote();
+			if(addReqForQuote == null){
+				addReqForQuote = new AddRequestForQuote();
+			}
 			addReqForQuote.setRfqAttrName("xmlns:" + prefix);
 			addReqForQuote.setRfqAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("oa")) {
+			if(addReqForQuote == null){
+				addReqForQuote = new AddRequestForQuote();
+			}
 			addReqForQuote.setRfqAttrOaName("xmlns:" + prefix);
 			addReqForQuote.setRfqAttrOaValue(uri);
 		}
