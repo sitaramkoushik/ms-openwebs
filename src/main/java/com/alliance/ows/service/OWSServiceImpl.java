@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,9 +36,11 @@ import com.alliance.ows.handler.InquiryHandler;
 import com.alliance.ows.handler.OrderHandler;
 import com.alliance.ows.handler.OwsXmlGenerator;
 import com.alliance.ows.model.Quantity;
+import com.alliance.ows.model.inquire.Envelope;
 import com.alliance.ows.model.inquire.InquiryRequestData;
 import com.alliance.ows.model.inquire.InquiryRequestPart;
 import com.alliance.ows.model.inquire.InquiryResponseData;
+import com.alliance.ows.model.inquire.Line;
 import com.alliance.ows.model.order.OrderRequestData;
 import com.alliance.ows.model.order.OrderRequestPart;
 import com.alliance.ows.model.order.OrderResponseData;
@@ -87,27 +90,28 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	@Override
 	public String doOWSInq(String bodyString) throws Exception {
 		try {
+			UtilityLogger.warn(bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
 			SAXParser parser = saxParserFactory.newSAXParser();
 			InquiryHandler handler = new InquiryHandler();
 			InputStream in = new ByteArrayInputStream(bodyString.getBytes());
 			parser.parse(in, handler);
-			List<InquiryRequestPart> getPartData = handler.getPartData();
-			return prepareOwsInqReqData(getPartData);
+			Envelope envelopeData = handler.getEnvelopeData();
+			return prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
 		} catch (Exception e) {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		}
 	}
 
-	public String prepareOwsInqReqData(List<InquiryRequestPart> partData) throws ParserConfigurationException, TransformerException {
+	public String prepareOwsInqReqData(List<InquiryRequestPart> partData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
 		InquiryRequestData inqReqData = new InquiryRequestData();
 		inqReqData.setPart(partData);
 		String token = getTokenByOrgId("DummyOrg");
 		inqReqData.settoken(token);
 		inqReqData.setlookupType("IIS");
 		inqReqData.setsearchType("RECHECK_ALL");
-		return inqRequestToSellNetwork(gson.toJson(inqReqData));
+		return inqRequestToSellNetwork(gson.toJson(inqReqData), envelopeData);
 	}
 
 	private HttpResponse getHttpResponse(String requestData, String url) throws ClientProtocolException, IOException {
@@ -122,11 +126,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return response;
 	}
 
-	public String inqRequestToSellNetwork(String requestData) {
-		return getSellNetworkData(requestData, sellNetworkInqUrl, INQ);
+	public String inqRequestToSellNetwork(String requestData, Envelope envelopeData) {
+		return getSellNetworkData(requestData, sellNetworkInqUrl, INQ, envelopeData);
 	}
 
-	private String getSellNetworkData(String requestData, String sellNetworkURL, int reqType) {
+	private String getSellNetworkData(String requestData, String sellNetworkURL, int reqType, Envelope envelopeData) {
 		JSONObject respJson = new JSONObject();
 		try {
 			HttpResponse response = getHttpResponse(requestData, sellNetworkURL);
@@ -138,7 +142,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 				switch (reqType) {
 				case INQ:
-					result = inqRespParseToXml(json.toString());
+					result = inqRespParseToXml(json.toString(), envelopeData);
 					break;
 
 				case ORD:
@@ -146,7 +150,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 					break;
 
 				default:
-					result = inqRespParseToXml(json.toString());
+					result = inqRespParseToXml(json.toString(), envelopeData);
 					break;
 				}
 				respJson.put(ConstantsUtility.STATUS, ConstantsUtility.SUCCESS);
@@ -167,16 +171,17 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return respJson.toString().replaceAll("\n|\r", "").replaceAll("(\\\\r|\\\\n)", "").replaceAll("\\\\/", "/").replaceAll("\\\\", "");
 	}
 
-	public String inqRespParseToXml(String respJson) throws MalformedURLException, ParserConfigurationException, TransformerException {
+	public String inqRespParseToXml(String respJson, Envelope envelopeData) throws MalformedURLException, ParserConfigurationException, TransformerException {
 
 		InquiryResponseData obj = gson.fromJson(respJson, InquiryResponseData.class);
 
-		return xmlGenerator.getInquireRespXml(obj);
+		return xmlGenerator.getInquireRespXml(obj, envelopeData);
 	}
 
 	@Override
 	public String doOWSOrder(String bodyString) throws Exception {
 		try {
+			UtilityLogger.warn(bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
 			SAXParser parser = saxParserFactory.newSAXParser();
@@ -184,7 +189,8 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			InputStream in = new ByteArrayInputStream(bodyString.getBytes());
 			parser.parse(in, handler);
 			OrderRequestData getPartData = handler.getOrderReqData();
-			return prepareOwsOrdReqData(getPartData);
+			Envelope envelopeData = null;
+			return prepareOwsOrdReqData(getPartData, envelopeData);
 		} catch (Exception e) {
 			UtilityLogger.error(e);
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
@@ -192,7 +198,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 	}
 
-	public String prepareOwsOrdReqData(OrderRequestData ordReqData) throws ParserConfigurationException, TransformerException {
+	public String prepareOwsOrdReqData(OrderRequestData ordReqData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
 		String token = "";
 		List<OrderRequestPart> ordReqPartList = ordReqData.getParts();
 		for (OrderRequestPart ordReqPart : ordReqPartList) {
@@ -226,11 +232,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		ordReqData.setToken(token);
 		ordReqData.setTestOrder(true);
 		ordReqData.setComment("test");
-		return orderRequestToSellNetwork(gson.toJson(ordReqData));
+		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
 
-	public String orderRequestToSellNetwork(String requestData) throws ParserConfigurationException, TransformerException {
-		return getSellNetworkData(requestData, sellNetworkOrderUrl, ORD);
+	public String orderRequestToSellNetwork(String requestData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
+		return getSellNetworkData(requestData, sellNetworkOrderUrl, ORD, envelopeData);
 	}
 
 	public String orderRespParseToXml(String respJson) throws ParserConfigurationException, TransformerException {
@@ -273,5 +279,36 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		}
 		return new JSONObject(json).getString(ConstantsUtility.TOKEN);
+	}
+
+	public List<InquiryRequestPart> getPartData(Envelope envelope) {
+		List<InquiryRequestPart> obj = new ArrayList<InquiryRequestPart>();
+		List<Line> partList = envelope.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine();
+		for (Line partData : partList) {
+			InquiryRequestPart inqPartData = new InquiryRequestPart();
+			try{
+				inqPartData.setLine(Integer.parseInt(partData.getLineNumber()));
+			}catch(Exception e){
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try{
+				inqPartData.setLineCode(partData.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer());
+			}catch(Exception e){
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try{
+				inqPartData.setPart(partData.getOrderItem().getItemId().getSupplierItemId().getId());
+			}catch(Exception e){
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			if (partData.getOrderItem().getQuantityInfo() != null && partData.getOrderItem().getQuantityInfo().getRequestedQuantity() != null) {
+				inqPartData.setQty(Integer.parseInt(partData.getOrderItem().getQuantityInfo().getRequestedQuantity()));
+			} else {
+				inqPartData.setQty(0);
+			}
+
+			obj.add(inqPartData);
+		}
+		return obj;
 	}
 }
