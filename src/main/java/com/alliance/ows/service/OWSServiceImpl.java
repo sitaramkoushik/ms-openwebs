@@ -159,8 +159,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 							result = inqRespParseToXml(json.toString(), envelopeData);
 							break;
 						}
-						respJson.put(ConstantsUtility.STATUS, ConstantsUtility.SUCCESS);
-						respJson.put(ConstantsUtility.MESSAGE, result);
+						return result;
 					} else {
 						respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
 						respJson.put(ConstantsUtility.MESSAGE, json.getString(ConstantsUtility.ERROR));
