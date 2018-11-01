@@ -267,10 +267,10 @@ public class OwsXmlGenerator {
 
 		Element Quote = createElement("oa:Quote", DataArea, doc);
 		Element oaHeader = createElement("oa:Header", Quote, doc);
-		Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
+		/*Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
 		createElement("oa:Code", OrderStatus, doc, "");
 		createElement("oa:Description", OrderStatus, doc, "");
-		createElement("ow-o:Status", OrderStatus, doc, "");
+		createElement("ow-o:Status", OrderStatus, doc, "");*/
 		createElement("oa:SpecialPriceAuthorization", oaHeader, doc, "");
 		Element Parties = createElement("oa:Parties", oaHeader, doc);
 		// supplier party
