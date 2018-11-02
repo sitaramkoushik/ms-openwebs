@@ -93,6 +93,10 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		try {
 
 			bodyString = StringEscapeUtils.unescapeXml(bodyString);
+
+			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
+			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+			
 			UtilityLogger.warn("Request data: " + bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
