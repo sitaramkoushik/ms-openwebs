@@ -14,6 +14,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.ParseException;
@@ -90,7 +91,9 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	@Override
 	public String doOWSInq(String bodyString) throws Exception {
 		try {
-			UtilityLogger.warn(bodyString);
+
+			bodyString = StringEscapeUtils.unescapeXml(bodyString);
+			UtilityLogger.warn("Request data: " + bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
 			SAXParser parser = saxParserFactory.newSAXParser();
@@ -98,8 +101,19 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			InputStream in = new ByteArrayInputStream(bodyString.getBytes());
 			parser.parse(in, handler);
 			Envelope envelopeData = handler.getEnvelopeData();
-			return prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
+
+			String prefix = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><ProcessMessageResponse xmlns=\"http://www.carpartstechnologies.com/openwebs/\"><ProcessMessageResult>";
+			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
+
+			String actualResult = prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
+			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
+
+			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
+
+			UtilityLogger.warn("Response data: " + finalResult);
+			return finalResult;
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		}
 	}
@@ -312,7 +326,12 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 			}
 			if (partData.getOrderItem().getQuantityInfo() != null && partData.getOrderItem().getQuantityInfo().getRequestedQuantity() != null) {
-				inqPartData.setQty(Integer.parseInt(partData.getOrderItem().getQuantityInfo().getRequestedQuantity()));
+				try {
+					inqPartData.setQty(Integer.parseInt(partData.getOrderItem().getQuantityInfo().getRequestedQuantity()));
+				} catch (Exception e) {
+					UtilityLogger.error(e.getMessage());
+					inqPartData.setQty(1);
+				}
 			} else {
 				inqPartData.setQty(0);
 			}

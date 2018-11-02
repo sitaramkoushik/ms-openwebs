@@ -1,7 +1,10 @@
 package com.alliance.ows.controller;
 
+import java.net.URLDecoder;
+
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alliance.EchoController;
+import com.alliance.logging.UtilityLogger;
 import com.alliance.ows.service.OWSServiceInterface;
 import com.alliance.utils.ConstantsUtility;
 
@@ -37,6 +41,7 @@ public class OWSController extends EchoController {
 		try {
 			return owsService.doOWSInq(reqData);
 		} catch (Exception e) {
+			UtilityLogger.error(e.getMessage(), e);
 			JSONObject respJson = new JSONObject();
 			respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
 			respJson.put(ConstantsUtility.MESSAGE, e.getMessage());
@@ -53,6 +58,7 @@ public class OWSController extends EchoController {
 		try {
 			return owsService.doOWSOrder(reqData);
 		} catch (Exception e) {
+			UtilityLogger.error(e.getMessage(), e);
 			JSONObject respJson = new JSONObject();
 			respJson.put(ConstantsUtility.STATUS, ConstantsUtility.FAILED);
 			respJson.put(ConstantsUtility.MESSAGE, e.getMessage());

@@ -28,9 +28,13 @@ import com.alliance.ows.model.inquire.OaHeader;
 import com.alliance.ows.model.inquire.OrderItem;
 import com.alliance.ows.model.inquire.Parties;
 import com.alliance.ows.model.inquire.PartyId;
+import com.alliance.ows.model.inquire.ProcessMessage;
 import com.alliance.ows.model.inquire.Properties;
 import com.alliance.ows.model.inquire.QuantityInfo;
 import com.alliance.ows.model.inquire.RequestForQuote;
+import com.alliance.ows.model.inquire.SOAPBody;
+import com.alliance.ows.model.inquire.SOAPBodyEnvelope;
+import com.alliance.ows.model.inquire.SOAPEnvelop;
 import com.alliance.ows.model.inquire.SecurityInfo;
 import com.alliance.ows.model.inquire.Sender;
 import com.alliance.ows.model.inquire.ShipToParty;
@@ -46,6 +50,11 @@ import com.alliance.ows.model.inquire.To;
  */
 public class InquiryHandler extends DefaultHandler {
 
+	private SOAPEnvelop soapEnvelop = null;
+	private SOAPBody soapBody = null;
+	private ProcessMessage processMessage = null;
+	private SOAPBodyEnvelope soapBodyEnvelope = null;
+	
 	private Envelope envelopeData = null;
 
 	private Header headerData = null;
@@ -148,6 +157,24 @@ public class InquiryHandler extends DefaultHandler {
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
 		switch (qName) {
+
+		case "soap:Envelope":
+			soapEnvelop = new SOAPEnvelop();
+			break;
+		case "soap:Body":
+			soapBody = new SOAPBody();
+			soapEnvelop.setSoapBody(soapBody);
+			break;
+		case "ProcessMessage":
+			processMessage = new ProcessMessage();
+			soapBody.setProcessMessage(processMessage);
+			break;
+		case "envelope":
+			soapBodyEnvelope = new SOAPBodyEnvelope();
+			processMessage.setBodyEnvelope(soapBodyEnvelope);
+
+			soapBodyEnvelope.setEnvelope(envelopeData);
+			break;
 		// instantiating objects for header
 		case "ow-e:Header":
 			headerData = new Header();
@@ -523,6 +550,10 @@ public class InquiryHandler extends DefaultHandler {
 
 	public Envelope getEnvelopeData() {
 		return envelopeData;
+	}
+
+	public SOAPEnvelop getSOAPEnvelop() {
+		return soapEnvelop;
 	}
 
 }

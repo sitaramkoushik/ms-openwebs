@@ -217,6 +217,7 @@ public class OwsXmlGenerator {
 
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
+		doc.setXmlStandalone(false);
 		Element Envelope = doc.createElementNS(envData.getEnvAttrValue(), "Envelope");
 		Envelope.setPrefix("ow-e");
 		Envelope.setAttribute(envData.getEnvAttrRevName(), envData.getEnvAttrRevValue());
@@ -267,10 +268,10 @@ public class OwsXmlGenerator {
 
 		Element Quote = createElement("oa:Quote", DataArea, doc);
 		Element oaHeader = createElement("oa:Header", Quote, doc);
-		/*Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
-		createElement("oa:Code", OrderStatus, doc, "");
-		createElement("oa:Description", OrderStatus, doc, "");
-		createElement("ow-o:Status", OrderStatus, doc, "");*/
+		Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
+		createElement("oa:Code", OrderStatus, doc, "Open");
+		createElement("oa:Description", OrderStatus, doc, "0");
+		createElement("ow-o:Status", OrderStatus, doc, "success");
 		createElement("oa:SpecialPriceAuthorization", oaHeader, doc, "");
 		Element Parties = createElement("oa:Parties", oaHeader, doc);
 		// supplier party
@@ -328,8 +329,8 @@ public class OwsXmlGenerator {
 			Element OrderItem = createElement("ow-o:OrderItem", Line, doc);
 			Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
 			Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
-			createElement("oa:Id", SupplierItemId, doc, String.valueOf(inqRespPartinq.getPartId()));
-			createElement("oa:ItemType", OrderItem, doc, inqRespPartinq.getPart());
+			createElement("oa:Id", SupplierItemId, doc, String.valueOf(inqRespPartinq.getPart()));
+			createElement("oa:ItemType", OrderItem, doc, "part");
 
 			for (SelectOption selectOp : inqRespPartinq.getLocations()) {
 				Element ItemInfo = createElement("ow-o:ItemInfo", OrderItem, doc);
