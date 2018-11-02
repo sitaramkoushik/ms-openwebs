@@ -1,5 +1,7 @@
 package com.alliance.ows.controller;
 
+import javax.ws.rs.core.MediaType;
+
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -26,14 +28,12 @@ public class OWSController extends EchoController {
 	@Autowired
 	private OWSServiceInterface owsService;
 
-	
 	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/inquiry", method = RequestMethod.POST)
+	@RequestMapping(value = "/inquiry", method = RequestMethod.POST, produces = { MediaType.TEXT_XML })
 	@ResponseBody
-	public String doOWSInq(
-			@RequestParam(value = "reqData", required = true) String reqData,
-			@RequestParam(value = "userName", required = false) String userName,
-			@RequestParam(value = "password", required = false) String password) {
+	public String doOWSInq(@RequestParam(value = "reqData", required = true) String reqData,
+					@RequestParam(value = "userName", required = false) String userName,
+					@RequestParam(value = "password", required = false) String password) {
 		try {
 			return owsService.doOWSInq(reqData);
 		} catch (Exception e) {
@@ -45,12 +45,11 @@ public class OWSController extends EchoController {
 	}
 
 	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/order", method = RequestMethod.POST)
+	@RequestMapping(value = "/order", method = RequestMethod.POST, produces = { MediaType.TEXT_XML })
 	@ResponseBody
-	public String doOWSOrder(
-			@RequestParam(value = "reqData", required = true) String reqData,
-			@RequestParam(value = "userName", required = false) String userName,
-			@RequestParam(value = "password", required = false) String password) {
+	public String doOWSOrder(@RequestParam(value = "reqData", required = true) String reqData,
+					@RequestParam(value = "userName", required = false) String userName,
+					@RequestParam(value = "password", required = false) String password) {
 		try {
 			return owsService.doOWSOrder(reqData);
 		} catch (Exception e) {
