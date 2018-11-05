@@ -21,7 +21,7 @@ public class InquiryResponsePart implements Serializable {
 	private int line;
 	private String part;
 	private String lineCode;
-	private String desc;
+	private String description;
 	private Vector<SelectOption> locations = new Vector<>();
 	private Status status;
 	private long partId = 0;
@@ -58,11 +58,11 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public String getDescription() {
-		return desc;
+		return description;
 	}
 
 	public void setDescription(String desc) {
-		this.desc = desc;
+		this.description = desc;
 	}
 
 	public Vector<SelectOption> getLocations() {
@@ -151,7 +151,7 @@ public class InquiryResponsePart implements Serializable {
 			equality = ((this.line == that.line && this.line != 0))
 							|| (this.partId == that.partId && this.partId != 0)
 							|| (this.part.trim().equalsIgnoreCase(that.part.trim()) && this.lineCode.trim().equalsIgnoreCase(that.lineCode.trim())
-											&& this.desc.trim().equalsIgnoreCase(that.desc.trim()) || ((this.desc.trim().isEmpty() || that.desc
+											&& this.description.trim().equalsIgnoreCase(that.description.trim()) || ((this.description.trim().isEmpty() || that.description
 											.trim().isEmpty()) && (this.part.trim().equalsIgnoreCase(that.part.trim()) && this.lineCode.trim()
 											.equalsIgnoreCase(that.lineCode.trim()))));
 		}

@@ -113,6 +113,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
+			// String finalResult = prefix + actualResult + suffix;
 
 			UtilityLogger.warn("Response data: " + finalResult);
 			return finalResult;

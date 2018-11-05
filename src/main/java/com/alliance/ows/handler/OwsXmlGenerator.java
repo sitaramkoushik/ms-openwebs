@@ -2,6 +2,8 @@ package com.alliance.ows.handler;
 
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,6 +22,7 @@ import com.alliance.logging.UtilityLogger;
 import com.alliance.ows.model.inquire.Envelope;
 import com.alliance.ows.model.inquire.InquiryResponseData;
 import com.alliance.ows.model.inquire.InquiryResponsePart;
+import com.alliance.ows.model.inquire.Line;
 import com.alliance.ows.model.inquire.SelectOption;
 import com.alliance.ows.model.order.OrderConfirm;
 import com.alliance.ows.model.order.OrderResponseData;
@@ -214,7 +217,34 @@ public class OwsXmlGenerator {
 	// Inquire response XML formatting
 	public String getInquireRespXml(InquiryResponseData inqRespdata, Envelope envData) throws ParserConfigurationException, TransformerException,
 					MalformedURLException {
-
+		List<String> reqPartDetail = new ArrayList<>();
+		List<Line> lineList = new ArrayList<Line>();
+		try {
+			lineList = envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine();
+		} catch (Exception e) {
+			lineList = null;
+		}
+		if (lineList != null) {
+			for (Line line : lineList) {
+				String partNum = null;
+				String lineCode = null;
+				try {
+					partNum = line.getOrderItem().getItemId().getSupplierItemId().getId();
+				} catch (Exception e) {
+					partNum = null;
+				}
+				try {
+					lineCode = line.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer();
+				} catch (Exception e) {
+					lineCode = null;
+				}
+				if (partNum != null && lineCode != null && !partNum.isEmpty() && !lineCode.isEmpty()) {
+					reqPartDetail.add(lineCode + "_" + partNum);
+				} else if (partNum != null && !partNum.isEmpty()) {
+					reqPartDetail.add(partNum);
+				}
+			}
+		}
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
 		doc.setXmlStandalone(false);
@@ -226,13 +256,13 @@ public class OwsXmlGenerator {
 		Element EndPoints = createElement("ow-e:EndPoints", Header, doc);
 		Element To = createElement("ow-e:To", EndPoints, doc);
 		try {
-			createElement("ow-e:Id", To, doc, envData.getHeader().getEndPoints().getTo().getId());
+			createElement("ow-e:Id", To, doc, envData.getHeader().getEndPoints().getFrom().getId());
 		} catch (Exception e) {
 			createElement("ow-e:Id", To, doc, "");
 		}
 		Element From = createElement("ow-e:From", EndPoints, doc);
 		try {
-			createElement("ow-e:Id", From, doc, envData.getHeader().getEndPoints().getFrom().getId());
+			createElement("ow-e:Id", From, doc, envData.getHeader().getEndPoints().getTo().getId());
 		} catch (Exception e) {
 			createElement("ow-e:Id", From, doc, "");
 		}
@@ -323,26 +353,43 @@ public class OwsXmlGenerator {
 			createElement("oa:Id", ShipToPartyId, doc, "");
 			createElement("ow-o:UniversalId", ShipToParty, doc, "");
 		}
-
+		int i = 0, lineNumber = 0;
 		for (InquiryResponsePart inqRespPartinq : inqRespdata.getData()) {
+			if (reqPartDetail.contains(inqRespPartinq.getPart())) {
+				i = reqPartDetail.indexOf(inqRespPartinq.getPart());
+			} else if (reqPartDetail.contains(inqRespPartinq.getLineCode() + "_" + inqRespPartinq.getPart())) {
+				i = reqPartDetail.indexOf(inqRespPartinq.getLineCode() + "_" + inqRespPartinq.getPart());
+			}
 			Element Line = createElement("ow-o:Line", Quote, doc);
+			Element LineNumber = createElement("oa:LineNumber", Line, doc);
+			LineNumber.setTextContent(String.valueOf(++lineNumber));
 			Element OrderItem = createElement("ow-o:OrderItem", Line, doc);
 			Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
 			Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
 			createElement("oa:Id", SupplierItemId, doc, String.valueOf(inqRespPartinq.getPart()));
-			createElement("oa:ItemType", OrderItem, doc, "part");
+			try {
+				createElement("oa:ItemType",
+								OrderItem,
+								doc,
+								String.valueOf(envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(i)
+												.getOrderItem().getItemType()));
+			} catch (Exception e) {
+				createElement("oa:ItemType", OrderItem, doc, String.valueOf("Part"));
+			}
 
 			for (SelectOption selectOp : inqRespPartinq.getLocations()) {
-				Element ItemInfo = createElement("ow-o:ItemInfo", OrderItem, doc);
-				Element ManufacturerInfo = createElement("ow-o:ManufacturerInfo", ItemInfo, doc);
-				createElement("ow-o:SupplierManufacturer", ManufacturerInfo, doc, inqRespPartinq.getLineCode());
-				Element AdditionalInfo = createElement("ow-o:AdditionalInfo", ItemInfo, doc);
-				createElement("ow-o:InfoName", AdditionalInfo, doc, "");
-				createElement("ow-o:InfoValue", AdditionalInfo, doc, "");
-				Element QuantityInfo = createElement("ow-o:QuantityInfo", OrderItem, doc);
-				Element AvailableQuantity = createElement("ow-o:AvailableQuantity", QuantityInfo, doc);
-				AvailableQuantity.setAttribute("uom", "EACH");
-				AvailableQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getAvailable()));
+				if (selectOp.getNetwork() == 100) {
+					Element ItemInfo = createElement("ow-o:ItemInfo", OrderItem, doc);
+					Element ManufacturerInfo = createElement("ow-o:ManufacturerInfo", ItemInfo, doc);
+					createElement("ow-o:SupplierManufacturer", ManufacturerInfo, doc, inqRespPartinq.getLineCode());
+					Element AdditionalInfo = createElement("ow-o:AdditionalInfo", ItemInfo, doc);
+					createElement("ow-o:InfoName", AdditionalInfo, doc, "");
+					createElement("ow-o:InfoValue", AdditionalInfo, doc, "");
+					Element QuantityInfo = createElement("ow-o:QuantityInfo", OrderItem, doc);
+					Element AvailableQuantity = createElement("ow-o:AvailableQuantity", QuantityInfo, doc);
+					AvailableQuantity.setAttribute("uom", "EACH");
+					AvailableQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getAvailable()));
+				}
 			}
 
 			Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
@@ -362,26 +409,49 @@ public class OwsXmlGenerator {
 			CPPerQuantity.setTextContent("");
 			Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
 			Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
-			SupplierLocationId.setTextContent("");
+			try {
+				SupplierLocationId.setTextContent(envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getOaHeader().getParties()
+								.getSupplierParty().getPartyId().getId());
+			} catch (Exception e) {
+				SupplierLocationId.setTextContent("");
+			}
 			Element UnitPrice = createElement("oa:UnitPrice", Line, doc);
 			Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
 			UPAmount.setAttribute("currency", "USD");
-			UPAmount.setTextContent("");
+			try {
+				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
+			} catch (Exception e) {
+				UPAmount.setTextContent("0.0");
+			}
 			Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
 			UPPerQuantity.setAttribute("uom", "EACH");
-			UPPerQuantity.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getActualCost()));
+			try {
+				UPPerQuantity.setTextContent(String.valueOf(inqRespPartinq.getPerCarQty()));
+			} catch (Exception e) {
+				UPPerQuantity.setTextContent("1");
+			}
+
 			if (inqRespPartinq.getDescription() != null) {
 				createElement("oa:Description", Line, doc, inqRespPartinq.getDescription());
 			} else {
 				createElement("oa:Description", Line, doc, "");
 			}
 			Element OWOrderStatus = createElement("ow-o:OrderStatus", Line, doc);
-			createElement("oa:Code", OWOrderStatus, doc, "");
+			createElement("oa:Code", OWOrderStatus, doc, "Open");
 			createElement("oa:Description", OWOrderStatus, doc, "");
-			createElement("ow-o:Status", OWOrderStatus, doc, "");
+			createElement("ow-o:Status", OWOrderStatus, doc, "success");
 			Element DocumentReferences = createElement("oa:DocumentReferences", Line, doc);
 			Element RFQDocumentReference = createElement("oa:RFQDocumentReference", DocumentReferences, doc);
-			createElement("oa:LineNumber", RFQDocumentReference, doc, String.valueOf(inqRespPartinq.getLine()));
+
+			try {
+				createElement("oa:LineNumber",
+								RFQDocumentReference,
+								doc,
+								String.valueOf(envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(i)
+												.getLineNumber()));
+			} catch (Exception e) {
+				createElement("oa:LineNumber", RFQDocumentReference, doc, String.valueOf(""));
+			}
 		}
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
