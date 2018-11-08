@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class InquiryRequestData implements Serializable {
 
-	private static final long serialVersionUID = 4549102110679275275L;
+	private static final long serialVersionUID = -509201867004469780L;
 	private String token;
 	private String searchType;
 	private String lookupType;
@@ -23,92 +23,91 @@ public class InquiryRequestData implements Serializable {
 	private String lookupInUse;
 	private List<InquiryRequestPart> parts;
 
-	public void setPart(List<InquiryRequestPart> part) {
-		parts = part;
-	}
-
-	public void setlookupType(String lookupType) {
-		this.lookupType = lookupType;
-	}
-
-	public void settoken(String token) {
-		this.token = token;
-	}
-
-	public void setsearchType(String searchType) {
-		this.searchType = searchType;
-	}
-
-	public void setscat(String scat) {
-		this.scat = scat;
-	}
-
-	public void setsindex(String sindex) {
-		this.sindex = sindex;
-	}
-
-	public void setstype(String stype) {
-		this.stype = stype;
-	}
-
-	public void setpartnerid(String partnerid) {
-		this.partnerid = partnerid;
-	}
-
-	public void setservice(String service) {
-		this.service = service;
-	}
-
-	public void setstart(String start) {
-		this.start = start;
-	}
-
-	public void setlookupInUse(String lookupInUse) {
-		this.lookupInUse = lookupInUse;
-	}
-
-	public List<InquiryRequestPart> getPart() {
-		return parts;
-	}
-
-	public String getlookupType() {
-		return lookupType;
-	}
-
-	public String getpartnerid() {
-		return partnerid;
-	}
-
-	public String getsearchType() {
-		return searchType;
-	}
-
-	public String getscat() {
-		return scat;
-	}
-
-	public String getsindex() {
-		return sindex;
-	}
-
-	public String getstype() {
-		return stype;
-	}
-
-	public String getservice() {
-		return service;
-	}
-
-	public String getstart() {
-		return start;
-	}
-
-	public String getlookupInUse() {
-		return lookupInUse;
-	}
-
-	public String gettoken() {
+	public String getToken() {
 		return token;
 	}
 
+	public void setToken(String token) {
+		this.token = token;
+	}
+
+	public String getSearchType() {
+		return searchType;
+	}
+
+	public void setSearchType(String searchType) {
+		this.searchType = searchType;
+	}
+
+	public String getLookupType() {
+		return lookupType;
+	}
+
+	public void setLookupType(String lookupType) {
+		this.lookupType = lookupType;
+	}
+
+	public String getScat() {
+		return scat;
+	}
+
+	public void setScat(String scat) {
+		this.scat = scat;
+	}
+
+	public String getSindex() {
+		return sindex;
+	}
+
+	public void setSindex(String sindex) {
+		this.sindex = sindex;
+	}
+
+	public String getStype() {
+		return stype;
+	}
+
+	public void setStype(String stype) {
+		this.stype = stype;
+	}
+
+	public String getPartnerid() {
+		return partnerid;
+	}
+
+	public void setPartnerid(String partnerid) {
+		this.partnerid = partnerid;
+	}
+
+	public String getService() {
+		return service;
+	}
+
+	public void setService(String service) {
+		this.service = service;
+	}
+
+	public String getStart() {
+		return start;
+	}
+
+	public void setStart(String start) {
+		this.start = start;
+	}
+
+	public String getLookupInUse() {
+		return lookupInUse;
+	}
+
+	public void setLookupInUse(String lookupInUse) {
+		this.lookupInUse = lookupInUse;
+	}
+
+	public List<InquiryRequestPart> getParts() {
+		return parts;
+	}
+
+	public void setParts(List<InquiryRequestPart> parts) {
+		this.parts = parts;
+	}
 }

@@ -96,7 +96,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
-			
+
 			UtilityLogger.warn("Request data: " + bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
@@ -123,13 +123,21 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		}
 	}
 
-	public String prepareOwsInqReqData(List<InquiryRequestPart> partData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
+	public String prepareOwsInqReqData(List<InquiryRequestPart> partData, Envelope envelopeData) throws ParserConfigurationException,
+					TransformerException {
+
 		InquiryRequestData inqReqData = new InquiryRequestData();
-		inqReqData.setPart(partData);
+		inqReqData.setParts(partData);
 		String token = getTokenByOrgId("DummyOrg");
-		inqReqData.settoken(token);
-		inqReqData.setlookupType("IIS");
-		inqReqData.setsearchType("RECHECK_ALL");
+		inqReqData.setToken(token);
+		inqReqData.setLookupType("IIS");
+		inqReqData.setLookupInUse("3");
+		inqReqData.setScat("99");
+		inqReqData.setSindex("0");
+		inqReqData.setStype("");
+		inqReqData.setService("OpenWebs");
+		inqReqData.setStart("0");
+		inqReqData.setSearchType("RECHECK_ALL");
 		return inqRequestToSellNetwork(gson.toJson(inqReqData), envelopeData);
 	}
 
@@ -200,7 +208,8 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return respJson.toString().replaceAll("\n|\r", "").replaceAll("(\\\\r|\\\\n)", "").replaceAll("\\\\/", "/").replaceAll("\\\\", "");
 	}
 
-	public String inqRespParseToXml(String respJson, Envelope envelopeData) throws MalformedURLException, ParserConfigurationException, TransformerException {
+	public String inqRespParseToXml(String respJson, Envelope envelopeData) throws MalformedURLException, ParserConfigurationException,
+					TransformerException {
 
 		InquiryResponseData obj = gson.fromJson(respJson, InquiryResponseData.class);
 
@@ -315,19 +324,23 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		List<Line> partList = envelope.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine();
 		for (Line partData : partList) {
 			InquiryRequestPart inqPartData = new InquiryRequestPart();
-			try{
+			try {
 				inqPartData.setLine(Integer.parseInt(partData.getLineNumber()));
-			}catch(Exception e){
+			} catch (Exception e) {
 				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 			}
-			try{
-				inqPartData.setLineCode(partData.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer());
-			}catch(Exception e){
-				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			try {
+				if (partData.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer() != null) {
+					inqPartData.setLineCode(partData.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer());
+				} else {
+					inqPartData.setLineCode("");
+				}
+			} catch (Exception e) {
+				inqPartData.setLineCode("");
 			}
-			try{
+			try {
 				inqPartData.setPart(partData.getOrderItem().getItemId().getSupplierItemId().getId());
-			}catch(Exception e){
+			} catch (Exception e) {
 				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 			}
 			if (partData.getOrderItem().getQuantityInfo() != null && partData.getOrderItem().getQuantityInfo().getRequestedQuantity() != null) {
@@ -340,7 +353,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			} else {
 				inqPartData.setQty(0);
 			}
-
+			inqPartData.setDescription("");
 			obj.add(inqPartData);
 		}
 		return obj;

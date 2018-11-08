@@ -12,11 +12,11 @@ import java.io.Serializable;
  */
 public class InquiryRequestPart implements Serializable {
 
-	private static final long serialVersionUID = 8772596154554778072L;
+	private static final long serialVersionUID = 7867540703875360224L;
 	private int line;
 	private String part;
 	private String lineCode;
-	private String desc;
+	private String description;
 	private boolean active;
 	private String brand;
 	private long brand_id;
@@ -48,11 +48,11 @@ public class InquiryRequestPart implements Serializable {
 	}
 
 	public String getDescription() {
-		return desc;
+		return description;
 	}
 
-	public void setDescription(String desc) {
-		this.desc = desc;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public boolean isActive() {
@@ -71,11 +71,11 @@ public class InquiryRequestPart implements Serializable {
 		this.brand = brand;
 	}
 
-	public long getBrandId() {
+	public long getBrand_id() {
 		return brand_id;
 	}
 
-	public void setBrandId(long brand_id) {
+	public void setBrand_id(long brand_id) {
 		this.brand_id = brand_id;
 	}
 
@@ -83,8 +83,8 @@ public class InquiryRequestPart implements Serializable {
 		return qty;
 	}
 
-	public void setQty(long current_qty) {
-		this.qty = current_qty;
+	public void setQty(long qty) {
+		this.qty = qty;
 	}
 
 	public String getSourceType() {
@@ -94,5 +94,4 @@ public class InquiryRequestPart implements Serializable {
 	public void setSourceType(String sourceType) {
 		this.sourceType = sourceType;
 	}
-
 }

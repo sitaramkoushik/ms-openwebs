@@ -54,7 +54,7 @@ public class InquiryHandler extends DefaultHandler {
 	private SOAPBody soapBody = null;
 	private ProcessMessage processMessage = null;
 	private SOAPBodyEnvelope soapBodyEnvelope = null;
-	
+
 	private Envelope envelopeData = null;
 
 	private Header headerData = null;
@@ -96,28 +96,7 @@ public class InquiryHandler extends DefaultHandler {
 	private boolean supplierItId = false;
 	private List<Line> lineData = new ArrayList<Line>();
 
-	private String sentAt = "";
-	private String topic = "";
-	private String identity = "";
-	private String userName = "";
-	private String password = "";
-
-	private String id = "";
-	private String component = "";
-	private String creationDateTime = "";
-	private String lineNumber = "";
-	private String itemType = "";
-	private String catalogName = "";
-	private String catalogVersion = "";
-	private String universalManufacturer = "";
-	private String catalogPublisher = "";
-	private String customerManufacturer = "";
-	private String supplierManufacturer = "";
-	private String requestLineGUID = "";
-	private String universalSize = "";
-	private String speedRating = "";
-	private String loadRating = "";
-	private String requestedQuantity = "";
+	private String elementName = "";
 	private String content = "";
 	private String partyFlag = "";
 	private SupplierParty supplierParty = null;
@@ -137,13 +116,13 @@ public class InquiryHandler extends DefaultHandler {
 			envelopeData.setEnvAttrName("xmlns:" + prefix);
 			envelopeData.setEnvAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("ow-o")) {
-			if(addReqForQuote == null){
+			if (addReqForQuote == null) {
 				addReqForQuote = new AddRequestForQuote();
 			}
 			addReqForQuote.setRfqAttrName("xmlns:" + prefix);
 			addReqForQuote.setRfqAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("oa")) {
-			if(addReqForQuote == null){
+			if (addReqForQuote == null) {
 				addReqForQuote = new AddRequestForQuote();
 			}
 			addReqForQuote.setRfqAttrOaName("xmlns:" + prefix);
@@ -156,6 +135,7 @@ public class InquiryHandler extends DefaultHandler {
 	// Triggered when the start of tag is found.
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
+		elementName = qName;
 		switch (qName) {
 
 		case "soap:Envelope":
@@ -202,21 +182,6 @@ public class InquiryHandler extends DefaultHandler {
 			from = new From();
 			endPoints.setFrom(from);
 			break;
-		case "ow-e:SentAt":
-			sentAt = qName;
-			break;
-		case "ow-e:Topic":
-			topic = qName;
-			break;
-		case "ow-e:Identity":
-			identity = qName;
-			break;
-		case "ow-e:Username":
-			userName = qName;
-			break;
-		case "ow-e:Password":
-			password = qName;
-			break;
 
 		case "ow-e:Body":
 			bodyData = new Body();
@@ -259,21 +224,18 @@ public class InquiryHandler extends DefaultHandler {
 			oaHeader.setParties(parties);
 			break;
 		case "ow-o:CustomerParty":
-			id = "";
 			customerPartyId = true;
 			partyFlag = qName;
 			customerParty = new CustomerParty();
 			parties.setCustomerParty(customerParty);
 			break;
 		case "ow-o:SupplierParty":
-			id = "";
 			supplierPartyId = true;
 			partyFlag = qName;
 			supplierParty = new SupplierParty();
 			parties.setSupplierParty(supplierParty);
 			break;
 		case "ow-o:ShipToParty":
-			id = "";
 			partyFlag = qName;
 			shipToPartyId = true;
 			shipToParty = new ShipToParty();
@@ -282,7 +244,6 @@ public class InquiryHandler extends DefaultHandler {
 		case "oa:PartyId":
 			break;
 		case "oa:Business":
-			id = "";
 			supplierBussId = false;
 			shipToBussId = false;
 			customerBussId = false;
@@ -300,7 +261,6 @@ public class InquiryHandler extends DefaultHandler {
 			lineData.add(line);
 			break;
 		case "ow-o:OrderItem":
-			id = "";
 			orderItem = new OrderItem();
 			line.setOrderItem(orderItem);
 			break;
@@ -332,59 +292,6 @@ public class InquiryHandler extends DefaultHandler {
 		case "ow-o:QuantityInfo":
 			quantityInfo = new QuantityInfo();
 			orderItem.setQuantityInfo(quantityInfo);
-			break;
-
-		// setting check variable to get value of fields
-		case "oa:Component":
-			component = qName;
-			break;
-		case "oa:CreationDateTime":
-			creationDateTime = qName;
-			break;
-		case "oa:Id":
-			id = qName;
-			break;
-		case "ow-e:Id":
-			id = qName;
-			break;
-		case "oa:LineNumber":
-			lineNumber = qName;
-			break;
-		case "oa:ItemType":
-			itemType = qName;
-			break;
-		case "ow-o:CatalogName":
-			catalogName = qName;
-			break;
-		case "ow-o:CatalogVersion":
-			catalogVersion = qName;
-			break;
-		case "ow-o:CatalogPublisher":
-			catalogPublisher = qName;
-			break;
-		case "ow-o:UniversalManufacturer":
-			universalManufacturer = qName;
-			break;
-		case "ow-o:CustomerManufacturer":
-			customerManufacturer = qName;
-			break;
-		case "ow-o:SupplierManufacturer":
-			supplierManufacturer = qName;
-			break;
-		case "ow-o:RequestLineGUID":
-			requestLineGUID = qName;
-			break;
-		case "ow-o:UniversalSize":
-			universalSize = qName;
-			break;
-		case "ow-o:SpeedRating":
-			speedRating = qName;
-			break;
-		case "ow-o:LoadRating":
-			loadRating = qName;
-			break;
-		case "ow-o:RequestedQuantity":
-			requestedQuantity = qName;
 			break;
 
 		}
@@ -424,127 +331,95 @@ public class InquiryHandler extends DefaultHandler {
 	@Override
 	public void characters(char[] ch, int start, int length) throws SAXException {
 		content = String.copyValueOf(ch, start, length).trim();
-		if (id.equalsIgnoreCase("ow-e:Id") && toId) {
+		if (elementName.equalsIgnoreCase("ow-e:Id") && toId) {
 			to.setId(content);
 			toId = false;
-			id = "";
-		} else if (id.equalsIgnoreCase("ow-e:Id") && fromId) {
+		} else if (elementName.equalsIgnoreCase("ow-e:Id") && fromId) {
 			from.setId(content);
 			fromId = false;
-			id = "";
-		} else if (id.equalsIgnoreCase("oa:Id") && customerBussId) {
+		} else if (elementName.equalsIgnoreCase("oa:Id") && customerBussId) {
 			bussiness = new Business();
 			bussiness.setId(content);
 			customerParty.setBussiness(bussiness);
 			customerBussId = false;
-			id = "";
-		} else if (id.equalsIgnoreCase("oa:Id") && supplierBussId) {
+		} else if (elementName.equalsIgnoreCase("oa:Id") && supplierBussId) {
 			bussiness = new Business();
 			bussiness.setId(content);
 			supplierParty.setBussiness(bussiness);
 			supplierBussId = false;
-			id = "";
-		} else if (id.equalsIgnoreCase("oa:Id") && shipToBussId) {
-			id = "";
+		} else if (elementName.equalsIgnoreCase("oa:Id") && shipToBussId) {
 			bussiness = new Business();
 			bussiness.setId(content);
 			shipToParty.setBussiness(bussiness);
 			shipToBussId = false;
 
-		} else if (id.equalsIgnoreCase("oa:Id") && customerPartyId) {
-			id = "";
+		} else if (elementName.equalsIgnoreCase("oa:Id") && customerPartyId) {
 			partyId = new PartyId();
 			partyId.setId(content);
 			customerParty.setPartyId(partyId);
 			customerPartyId = false;
 
-		} else if (id.equalsIgnoreCase("oa:Id") && supplierPartyId) {
-			id = "";
+		} else if (elementName.equalsIgnoreCase("oa:Id") && supplierPartyId) {
 			partyId = new PartyId();
 			partyId.setId(content);
 			supplierParty.setPartyId(partyId);
 			supplierPartyId = false;
 
-		} else if (id.equalsIgnoreCase("oa:Id") && shipToPartyId) {
-			id = "";
+		} else if (elementName.equalsIgnoreCase("oa:Id") && shipToPartyId) {
 			partyId = new PartyId();
 			partyId.setId(content);
 			shipToParty.setPartyId(partyId);
 			shipToPartyId = false;
 
-		} else if (id.equalsIgnoreCase("oa:Id") && supplierItId) {
-			id = "";
+		} else if (elementName.equalsIgnoreCase("oa:Id") && supplierItId) {
 			supplierItemId.setId(content);
 			supplierItId = false;
 
-		} else if (id.equalsIgnoreCase("oa:Id") && customerDocId) {
+		} else if (elementName.equalsIgnoreCase("oa:Id") && customerDocId) {
 			customerDocumentId.setId(content);
 			customerDocId = false;
-			id = "";
-		} else if (supplierManufacturer.equalsIgnoreCase("ow-o:SupplierManufacturer")) {
-			manufacturerInfo.setSupplierManufacturer(content);
-			supplierManufacturer = "";
-		} else if (lineNumber.equalsIgnoreCase("oa:LineNumber")) {
+		} else if (elementName.equalsIgnoreCase("oa:LineNumber")) {
 			line.setLineNumber(content);
-			lineNumber = "";
-		} else if (component.equalsIgnoreCase("oa:Component")) {
+		} else if (elementName.equalsIgnoreCase("oa:Component")) {
 			sender.setComponent(content);
-			component = "";
-		} else if (creationDateTime.equalsIgnoreCase("oa:CreationDateTime")) {
+		} else if (elementName.equalsIgnoreCase("oa:CreationDateTime")) {
 			applicationArea.setCreationDateTime(content);
-			creationDateTime = "";
-		} else if (itemType.equalsIgnoreCase("oa:ItemType")) {
+		} else if (elementName.equalsIgnoreCase("oa:ItemType")) {
 			orderItem.setItemType(content);
-			itemType = "";
-		} else if (catalogName.equalsIgnoreCase("ow-o:CatalogName")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:CatalogName")) {
 			catalogInfo.setCatalogName(content);
-			catalogName = "";
-		} else if (catalogVersion.equalsIgnoreCase("ow-o:CatalogVersion")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:CatalogVersion")) {
 			catalogInfo.setCatalogVersion(content);
-			catalogVersion = "";
-		} else if (catalogPublisher.equalsIgnoreCase("ow-o:CatalogPublisher")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:CatalogPublisher")) {
 			catalogInfo.setCatalogPublisher(content);
-			catalogPublisher = "";
-		} else if (universalManufacturer.equalsIgnoreCase("ow-o:UniversalManufacturer")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:UniversalManufacturer")) {
 			manufacturerInfo.setUniversalManufacturer(content);
-			universalManufacturer = "";
-		} else if (supplierManufacturer.equalsIgnoreCase("ow-o:SupplierManufacturer")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:SupplierManufacturer")) {
 			manufacturerInfo.setSupplierManufacturer(content);
-			supplierManufacturer = "";
-		} else if (customerManufacturer.equalsIgnoreCase("ow-o:CustomerManufacturer")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:CustomerManufacturer")) {
 			manufacturerInfo.setCustomerManufacturer(content);
-			customerManufacturer = "";
-		} else if (requestLineGUID.equalsIgnoreCase("ow-o:RequestLineGUID")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:RequestLineGUID")) {
 			orderItem.setRequestLineGUID(content);
-			requestLineGUID = "";
-		} else if (universalSize.equalsIgnoreCase("ow-o:UniversalSize")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:UniversalSize")) {
 			sizeInfo.setUniversalSize(content);
-			universalSize = "";
-		} else if (speedRating.equalsIgnoreCase("ow-o:SpeedRating")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:SpeedRating")) {
 			itemInfo.setSpeedRating(content);
-			speedRating = "";
-		} else if (loadRating.equalsIgnoreCase("ow-o:LoadRating")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:LoadRating")) {
 			itemInfo.setLoadRating(content);
-			loadRating = "";
-		} else if (requestedQuantity.equalsIgnoreCase("ow-o:RequestedQuantity")) {
+		} else if (elementName.equalsIgnoreCase("ow-o:RequestedQuantity")) {
 			quantityInfo.setRequestedQuantity(content);
-			requestedQuantity = "";
-		} else if (sentAt.equalsIgnoreCase("ow-e:SentAt")) {
+		} else if (elementName.equalsIgnoreCase("ow-e:SentAt")) {
 			properties.setSentAt(content);
-			sentAt = "";
-		} else if (topic.equalsIgnoreCase("ow-e:Topic")) {
+		} else if (elementName.equalsIgnoreCase("ow-e:Topic")) {
 			properties.setTopic(content);
-			topic = "";
-		} else if (identity.equalsIgnoreCase("ow-e:Identity")) {
+		} else if (elementName.equalsIgnoreCase("ow-e:Identity")) {
 			properties.setIdentity(content);
-			identity = "";
-		} else if (userName.equalsIgnoreCase("ow-e:Username")) {
+		} else if (elementName.equalsIgnoreCase("ow-e:Username")) {
 			securityInfo.setUserName(content);
-			userName = "";
-		} else if (password.equalsIgnoreCase("ow-e:Password")) {
+		} else if (elementName.equalsIgnoreCase("ow-e:Password")) {
 			securityInfo.setPassword(content);
-			password = "";
 		}
+		elementName = "";
 
 	}
 
