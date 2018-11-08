@@ -322,10 +322,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	public List<InquiryRequestPart> getPartData(Envelope envelope) {
 		List<InquiryRequestPart> obj = new ArrayList<InquiryRequestPart>();
 		List<Line> partList = envelope.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine();
+		int lineNumber = 0;
 		for (Line partData : partList) {
 			InquiryRequestPart inqPartData = new InquiryRequestPart();
 			try {
-				inqPartData.setLine(Integer.parseInt(partData.getLineNumber()));
+				inqPartData.setLine(++lineNumber);
 			} catch (Exception e) {
 				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 			}
