@@ -447,8 +447,7 @@ public class OwsXmlGenerator {
 		Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
 		Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
 		try {
-			SupplierLocationId.setTextContent(envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getOaHeader().getParties()
-							.getSupplierParty().getPartyId().getId());
+			SupplierLocationId.setTextContent(selectOp.getRealNetwork() + "");
 		} catch (Exception e) {
 			SupplierLocationId.setTextContent("");
 		}
