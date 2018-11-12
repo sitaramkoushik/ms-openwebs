@@ -274,6 +274,7 @@ public class OrderHandler extends DefaultHandler {
 			break;
 		case "oa:SupplierItemId":
 			supplierItId = true;
+			shipToPartyId = false ;
 			supplierItemId = new SupplierItemId();
 			itemIds.setSupplierItemId(supplierItemId);
 			break;

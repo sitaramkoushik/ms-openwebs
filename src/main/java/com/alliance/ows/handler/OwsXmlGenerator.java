@@ -71,7 +71,34 @@ public class OwsXmlGenerator {
 
 	// Order response XML formatting
 	public String getOrderRespXml(OrderResponseData ordRespData, Envelope envData) throws ParserConfigurationException, TransformerException {
-
+		List<String> reqPartDetail = new ArrayList<>();
+		List<com.alliance.ows.model.order.Line> lineList = new ArrayList<com.alliance.ows.model.order.Line>();
+		try {
+			lineList = envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine();
+		} catch (Exception e) {
+			lineList = null;
+		}
+		if (lineList != null) {
+			for (com.alliance.ows.model.order.Line line : lineList) {
+				String partNum = null;
+				String lineCode = null;
+				try {
+					partNum = line.getOrderItem().getItemId().getSupplierItemId().getId();
+				} catch (Exception e) {
+					partNum = null;
+				}
+				try {
+					lineCode = line.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer() ;
+				} catch (Exception e) {
+					lineCode = null;
+				}
+				if (partNum != null && lineCode != null && !partNum.isEmpty() && !lineCode.isEmpty()) {
+					reqPartDetail.add(lineCode + "_" + partNum);
+				} else if (partNum != null && !partNum.isEmpty()) {
+					reqPartDetail.add(partNum);
+				}
+			}
+		}
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
 		// Root element creation and Fields,Attribute setting
@@ -173,13 +200,23 @@ public class OwsXmlGenerator {
 			j--;
 		}*/
 
-		int i = 0, lineNum = 0;
+		int ordLineNumber = -1, lineNum = 0;
 		double extendedPrice = 0.0, totalPrice = 0.0;
 		for (OrderConfirm ordConfirm : ordRespData.getData()) {
 			Element Line = createElement("oa:Line", PurchaseOrder, doc);
 			createElement("oa:LineNumber", Line, doc, String.valueOf(++lineNum));
 			// Part List data setting
 			for (OrderResponsePart ordRespPart : ordConfirm.getParts()) {
+				if (reqPartDetail.contains(ordRespPart.getPart())) {
+					ordLineNumber = reqPartDetail.indexOf(ordRespPart.getPart());
+				} else if (reqPartDetail.contains(ordRespPart.getLineCode() + "_" + ordRespPart.getPart())) {
+					ordLineNumber = reqPartDetail.indexOf(ordRespPart.getLineCode() + "_" + ordRespPart.getPart());
+				}
+
+				if (ordLineNumber == -1) {
+					continue;
+				}
+				
 				Element OrderItem = createElement("ow-o:OrderItem", Line, doc);
 				Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
 				Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
@@ -212,7 +249,7 @@ public class OwsXmlGenerator {
 					SupplierLocationId.setTextContent(String.valueOf(selectOpt.getNetwork()));
 
 					Element RequestLineGUID = createElement("ow-o:RequestLineGUID", OrderItem, doc);
-					RequestLineGUID.setTextContent(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(i)
+					RequestLineGUID.setTextContent(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(ordLineNumber)
 									.getOrderItem().getRequestLineGUID());
 
 					Element OrderQuantity = createElement("oa:OrderQuantity", Line, doc);
@@ -252,13 +289,13 @@ public class OwsXmlGenerator {
 					createElement("oa:LineNumber",
 									PartPurchaseOrderDocumentReference,
 									doc,
-									String.valueOf(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(i)
+									String.valueOf(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(ordLineNumber)
 													.getLineNumber()));
 				} catch (Exception e) {
 					createElement("oa:LineNumber", PartPurchaseOrderDocumentReference, doc, String.valueOf(""));
 				}
 			}
-			i++;
+			
 		}
 		Element ExtendedPrice = createElement("oa:ExtendedPrice", oaHeader, doc);
 		ExtendedPrice.setAttribute("currency", "USD");
