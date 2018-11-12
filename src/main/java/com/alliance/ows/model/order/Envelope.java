@@ -1,34 +1,12 @@
-package com.alliance.ows.model.inquire;
-
-import com.alliance.ows.model.order.OrdBody;
-import com.alliance.ows.model.order.OrdHeader;
+package com.alliance.ows.model.order;
 
 public class Envelope {
-	private Header header;
-	private Body body;
-	private OrdBody ordBody;
-	private OrdHeader ordHeader ;
+	private OrdHeader header;
+	private OrdBody body;
 	private String envAttrName;
 	private String envAttrValue;
 	private String envAttrRevName;
 	private String envAttrRevValue;
-	
-	public OrdBody getOrdBody() {
-		return ordBody;
-	}
-
-	public void setOrdBody(OrdBody ordBody) {
-		this.ordBody = ordBody;
-	}
-
-
-	public OrdHeader getOrdHeader() {
-		return ordHeader;
-	}
-
-	public void setOrdHeader(OrdHeader ordHeader) {
-		this.ordHeader = ordHeader;
-	}
 
 	public String getEnvAttrName() {
 		return envAttrName;
@@ -62,19 +40,19 @@ public class Envelope {
 		this.envAttrRevValue = envAttrRevValue;
 	}
 
-	public Header getHeader() {
+	public OrdHeader getHeader() {
 		return header;
 	}
 
-	public void setHeader(Header header) {
+	public void setHeader(OrdHeader header) {
 		this.header = header;
 	}
 
-	public Body getBody() {
+	public OrdBody getBody() {
 		return body;
 	}
 
-	public void setBody(Body body) {
+	public void setBody(OrdBody body) {
 		this.body = body;
 	}
 }

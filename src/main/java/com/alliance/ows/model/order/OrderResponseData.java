@@ -18,6 +18,18 @@ public class OrderResponseData implements Serializable {
 	@JsonProperty("Data")
 	private List<OrderConfirm> Data;
 
+	@JsonProperty("status")
+	private String status;
+	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+
 	public List<OrderConfirm> getData() {
 		return Data;
 	}

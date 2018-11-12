@@ -179,7 +179,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 							break;
 
 						case ORD:
-							result = orderRespParseToXml(json.toString());
+							result = orderRespParseToXml(json.toString(), envelopeData);
 							break;
 
 						default:
@@ -226,9 +226,18 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			OrderHandler handler = new OrderHandler();
 			InputStream in = new ByteArrayInputStream(bodyString.getBytes());
 			parser.parse(in, handler);
-			OrderRequestData getPartData = handler.getOrderReqData();
-			Envelope envelopeData = null;
-			return prepareOwsOrdReqData(getPartData, envelopeData);
+			Envelope envelopeData = handler.getOrderReqEnvelope();
+			String prefix = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><ProcessMessageResponse xmlns=\"http://www.carpartstechnologies.com/openwebs/\"><ProcessMessageResult>";
+			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
+
+			String actualResult = prepareOwsOrdReqData(getOrderPartData(envelopeData), envelopeData);
+			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
+
+			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
+			// String finalResult = prefix + actualResult + suffix;
+
+			UtilityLogger.warn("Response data: " + finalResult);
+			return actualResult;
 		} catch (Exception e) {
 			UtilityLogger.error(e);
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
@@ -240,21 +249,27 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		String token = "";
 		List<OrderRequestPart> ordReqPartList = ordReqData.getParts();
 		for (OrderRequestPart ordReqPart : ordReqPartList) {
-			ordReqPart.setAdded_to_cart(ordReqPart.getOrderedQuantity());
+			ordReqPart.setAdded_to_cart(ordReqPart.getQty());
 			Vector<SelectOption> locations;
 			if (ordReqPart.getLocations() == null) {
 				locations = new Vector<SelectOption>();
 				SelectOption selOpt = new SelectOption();
 				Quantity quant = new Quantity();
-				quant.setRequested(ordReqPart.getOrderedQuantity());
+				quant.setRequested(ordReqPart.getQty());
 				selOpt.setQuantity(quant);
-				selOpt.setNetwork(ordReqPart.getSelLoc());
+				if (ordReqPart.getSelLoc() == 0) {
+					selOpt.setNetwork(100);
+					ordReqPart.setSelLoc(100);
+				} else {
+					selOpt.setNetwork(ordReqPart.getSelLoc());
+				}
+
 				locations.add(selOpt);
 			} else {
 				locations = ordReqPart.getLocations();
 				for (SelectOption selOpt : locations) {
 					Quantity quant = new Quantity();
-					quant.setRequested(ordReqPart.getOrderedQuantity());
+					quant.setRequested(ordReqPart.getQty());
 					selOpt.setQuantity(quant);
 					selOpt.setNetwork(ordReqPart.getSelLoc());
 					locations.add(selOpt);
@@ -273,15 +288,53 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
 
+	public OrderRequestData getOrderPartData(Envelope envelope) {
+		OrderRequestData ordReqData = new OrderRequestData();
+		List<OrderRequestPart> obj = new ArrayList<OrderRequestPart>();
+		List<com.alliance.ows.model.order.Line> partList = envelope.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine();
+		for (com.alliance.ows.model.order.Line partData : partList) {
+			OrderRequestPart ordPartData = new OrderRequestPart();
+			try {
+				ordPartData.setLine(Integer.parseInt(partData.getLineNumber()));
+			} catch (Exception e) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try {
+				ordPartData.setLineCode(partData.getOrderItem().getItemInfo().getManufacturerInfo().getSupplierManufacturer());
+			} catch (Exception e) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try {
+				ordPartData.setPart(partData.getOrderItem().getItemId().getSupplierItemId().getId());
+			} catch (Exception e) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try {
+				ordPartData.setSelLoc(Integer.parseInt(partData.getOrderItem().getOrderInfo().getSupplierLocationId()));
+			} catch (Exception e) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+			try {
+				ordPartData.setQty(Integer.parseInt(partData.getOrderQuantity()));
+			} catch (Exception e) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+			}
+
+			obj.add(ordPartData);
+		}
+		ordReqData.setParts(obj);
+		return ordReqData;
+	}
+
 	public String orderRequestToSellNetwork(String requestData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
 		return getSellNetworkData(requestData, sellNetworkOrderUrl, ORD, envelopeData);
 	}
 
-	public String orderRespParseToXml(String respJson) throws ParserConfigurationException, TransformerException {
+	public String orderRespParseToXml(String respJson, Envelope envData) throws ParserConfigurationException, TransformerException {
 
 		OrderResponseData obj = gson.fromJson(respJson, OrderResponseData.class);
 
-		return xmlGenerator.getOrderRespXml(obj);
+		return xmlGenerator.getOrderRespXml(obj, envData);
 	}
 
 	/**

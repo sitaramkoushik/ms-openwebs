@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -71,7 +70,7 @@ public class OwsXmlGenerator {
 	}
 
 	// Order response XML formatting
-	public String getOrderRespXml(OrderResponseData ordRespData) throws ParserConfigurationException, TransformerException {
+	public String getOrderRespXml(OrderResponseData ordRespData, Envelope envData) throws ParserConfigurationException, TransformerException {
 
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
@@ -83,10 +82,25 @@ public class OwsXmlGenerator {
 		Element Header = createElement("ow-e:Header", Envelope, doc);
 		Element EndPoints = createElement("ow-e:EndPoints", Header, doc);
 		Element To = createElement("ow-e:To", EndPoints, doc);
-		createElement("ow-e:Id", To, doc, "");
+		try {
+			createElement("ow-e:Id", To, doc, envData.getOrdHeader().getEndPoints().getFrom().getId());
+		} catch (Exception e) {
+			createElement("ow-e:Id", To, doc, "");
+		}
 		Element From = createElement("ow-e:From", EndPoints, doc);
-		createElement("ow-e:Id", From, doc, "");
+		try {
+			createElement("ow-e:Id", From, doc, envData.getOrdHeader().getEndPoints().getTo().getId());
+		} catch (Exception e) {
+			createElement("ow-e:Id", From, doc, "");
+		}
 		Element Properties = createElement("ow-e:Properties", Header, doc);
+		try {
+			createElement("ow-e:Identity", Properties, doc, envData.getOrdHeader().getProperties().getIdentity());
+			createElement("ow-e:SentAt", Properties, doc, envData.getOrdHeader().getProperties().getSentAt());
+		} catch (Exception e) {
+			createElement("ow-e:Identity", Properties, doc, "");
+			createElement("ow-e:SentAt", Properties, doc, "");
+		}
 		createElement("ow-e:SentAt", Properties, doc, "");
 		createElement("ow-e:Topic", Properties, doc, "AcknowledgePurchaseOrder");
 		// Body element data setting
@@ -98,72 +112,87 @@ public class OwsXmlGenerator {
 		// ApplicationArea data setting
 		Element ApplicationArea = createElement("oa:ApplicationArea", AcknowledgePurchaseOrder, doc);
 		Element Sender = createElement("oa:Sender", ApplicationArea, doc);
-		createElement("oa:Component", Sender, doc, "");
-		createElement("oa:CreationDateTime", ApplicationArea, doc, "");
+		try {
+			createElement("oa:Component", Sender, doc, envData.getOrdBody().getProcessPurchaseOrder().getApplicationArea().getSender().getComponent());
+		} catch (Exception e) {
+			createElement("oa:Component", Sender, doc, "");
+		}
+		try {
+			createElement("oa:CreationDateTime", ApplicationArea, doc, envData.getOrdBody().getProcessPurchaseOrder().getApplicationArea()
+							.getCreationDateTime());
+		} catch (Exception e) {
+			createElement("oa:CreationDateTime", ApplicationArea, doc, "");
+		}
+		// DataArea data setting
+		Element DataArea = createElement("oa:DataArea", AcknowledgePurchaseOrder, doc);
+		Element Acknowledge = createElement("oa:Acknowledge", DataArea, doc);
+		createElement("oa:Code", Acknowledge, doc, "");
+		// PurchaseOrder Fields and Data setting
+		Element PurchaseOrder = createElement("oa:PurchaseOrder", DataArea, doc);
+		Element oaHeader = createElement("ow-o:Header", PurchaseOrder, doc);
+		Element DocumentIds = createElement("oa:DocumentIds", oaHeader, doc);
 
+		Element SupplierDocumentId = createElement("oa:SupplierDocumentId", DocumentIds, doc);
+		createElement("oa:Id", SupplierDocumentId, doc, "");
+
+		Element DocumentReferences = createElement("oa:DocumentReferences", oaHeader, doc);
+		Element PurchaseOrderDocumentReference = createElement("oa:PurchaseOrderDocumentReference", DocumentReferences, doc);
+		Element oaDocumentIds = createElement("oa:DocumentIds", PurchaseOrderDocumentReference, doc);
+		Element CustomerDocumentId = createElement("oa:CustomerDocumentId", oaDocumentIds, doc);
+
+		createElement("oa:Id", CustomerDocumentId, doc, envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder()
+						.getOwoHeader().getDocuments().getCustomerDocumentId().getId());
+
+		Element DocumentId = createElement("oa:DocumentId", oaDocumentIds, doc);
+		createElement("oa:Id", DocumentId, doc, envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader()
+						.getDocuments().getDocumentId().getId());
+		// Order status detail
+		Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
+
+		createElement("oa:Code", OrderStatus, doc, "Open");
+		createElement("oa:Description", OrderStatus, doc, "");
+		createElement("ow-o:Status", OrderStatus, doc, ordRespData.getStatus());
+
+		/*Element Charges = createElement("oa:Charges", oaHeader, doc);
+		Element Charge = createElement("oa:Charge", Charges, doc);
+		createElement("oa:Id", Charge, doc, "");
+		Element Total = createElement("oa:Total", Charge, doc);
+		Total.setAttribute("currency", "");
+		Total.setTextContent("");
+		Element TotalCharge = createElement("oa:TotalCharge", Charges, doc);
+		Element TcTotal = createElement("oa:Total", TotalCharge, doc);
+		TcTotal.setAttribute("currency", "");
+		TcTotal.setTextContent("");
+		int j = 2;
+		while (j > 0) {
+			Element Tax = createElement("oa:Tax", oaHeader, doc);
+			Element TaxAmount = createElement("oa:TaxAmount", Tax, doc);
+			TaxAmount.setAttribute("currency", "");
+			TaxAmount.setTextContent("");
+			createElement("oa:TaxCode", Tax, doc, "");
+			j--;
+		}*/
+
+		int i = 0, lineNum = 0;
+		double extendedPrice = 0.0, totalPrice = 0.0;
 		for (OrderConfirm ordConfirm : ordRespData.getData()) {
-
-			// DataArea data setting
-			Element DataArea = createElement("oa:DataArea", AcknowledgePurchaseOrder, doc);
-			Element Acknowledge = createElement("oa:Acknowledge", DataArea, doc);
-			createElement("oa:Code", Acknowledge, doc, "");
-			// PurchaseOrder Fields and Data setting
-			Element PurchaseOrder = createElement("oa:PurchaseOrder", DataArea, doc);
-			Element oaHeader = createElement("ow-o:Header", PurchaseOrder, doc);
-			Element DocumentIds = createElement("oa:DocumentIds", oaHeader, doc);
-			Element SupplierDocumentId = createElement("oa:SupplierDocumentId", DocumentIds, doc);
-			createElement("oa:Id", SupplierDocumentId, doc, "");
-			Element DocumentReferences = createElement("oa:DocumentReferences", oaHeader, doc);
-			Element PurchaseOrderDocumentReference = createElement("oa:PurchaseOrderDocumentReference", DocumentReferences, doc);
-			Element oaDocumentIds = createElement("oa:DocumentIds", PurchaseOrderDocumentReference, doc);
-			Element CustomerDocumentId = createElement("oa:CustomerDocumentId", oaDocumentIds, doc);
-			createElement("oa:Id", CustomerDocumentId, doc, "");
-			Element DocumentId = createElement("oa:DocumentId", oaDocumentIds, doc);
-			createElement("oa:Id", DocumentId, doc, "");
-			// Order status detail
-			Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
-			createElement("oa:Code", OrderStatus, doc, "");
-			createElement("oa:Description", OrderStatus, doc, "");
-			createElement("ow-o:Status", OrderStatus, doc, "");
-			Element ExtendedPrice = createElement("oa:ExtendedPrice", oaHeader, doc);
-			ExtendedPrice.setAttribute("currency", "");
-			ExtendedPrice.setTextContent("");
-			Element TotalAmount = createElement("oa:TotalAmount", oaHeader, doc);
-			TotalAmount.setAttribute("currency", "");
-			TotalAmount.setTextContent("");
-
-			Element Charges = createElement("oa:Charges", oaHeader, doc);
-			Element Charge = createElement("oa:Charge", Charges, doc);
-			createElement("oa:Id", Charge, doc, "");
-			Element Total = createElement("oa:Total", Charge, doc);
-			Total.setAttribute("currency", "");
-			Total.setTextContent("");
-			Element TotalCharge = createElement("oa:TotalCharge", Charges, doc);
-			Element TcTotal = createElement("oa:Total", TotalCharge, doc);
-			TcTotal.setAttribute("currency", "");
-			TcTotal.setTextContent("");
-			int j = 2;
-			while (j > 0) {
-				Element Tax = createElement("oa:Tax", oaHeader, doc);
-				Element TaxAmount = createElement("oa:TaxAmount", Tax, doc);
-				TaxAmount.setAttribute("currency", "");
-				TaxAmount.setTextContent("");
-				createElement("oa:TaxCode", Tax, doc, "");
-				j--;
-			}
+			Element Line = createElement("oa:Line", PurchaseOrder, doc);
+			createElement("oa:LineNumber", Line, doc, String.valueOf(++lineNum));
 			// Part List data setting
 			for (OrderResponsePart ordRespPart : ordConfirm.getParts()) {
-				Element Line = createElement("oa:Line", PurchaseOrder, doc);
-				createElement("oa:LineNumber", Line, doc, String.valueOf(ordRespPart.getLine()));
 				Element OrderItem = createElement("ow-o:OrderItem", Line, doc);
 				Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
 				Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
+
 				createElement("oa:Id", SupplierItemId, doc, ordRespPart.getPart());
-				createElement("oa:ItemType", OrderItem, doc, ordRespPart.getDesc());
+				createElement("oa:ItemType", OrderItem, doc, "Part");
+
 				Element ItemInfo = createElement("ow-o:ItemInfo", OrderItem, doc);
 				Element ManufacturerInfo = createElement("ow-o:ManufacturerInfo", ItemInfo, doc);
 				createElement("ow-o:SupplierManufacturer", ManufacturerInfo, doc, ordRespPart.getLineCode());
+
 				for (com.alliance.ows.model.order.SelectOption selectOpt : ordRespPart.getLocations()) {
+
 					Element QuantityInfo = createElement("ow-o:QuantityInfo", OrderItem, doc);
 					Element ShippedQuantity = createElement("ow-o:ShippedQuantity", QuantityInfo, doc);
 					ShippedQuantity.setAttribute("uom", "EACH");
@@ -171,48 +200,78 @@ public class OwsXmlGenerator {
 					Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
 					Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
 					Element CPAmount = createElement("oa:Amount", CorePrice, doc);
-					CPAmount.setAttribute("currency", "");
+					CPAmount.setAttribute("currency", "USD");
 					CPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getCoreCost()));
+
 					Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
 					CPPerQuantity.setAttribute("uom", "EACH");
-					CPPerQuantity.setTextContent("");
+					CPPerQuantity.setTextContent("1");
+
 					Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
 					Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
 					SupplierLocationId.setTextContent(String.valueOf(selectOpt.getNetwork()));
+
 					Element RequestLineGUID = createElement("ow-o:RequestLineGUID", OrderItem, doc);
-					RequestLineGUID.setTextContent("");
+					RequestLineGUID.setTextContent(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(i)
+									.getOrderItem().getRequestLineGUID());
+
 					Element OrderQuantity = createElement("oa:OrderQuantity", Line, doc);
 					OrderQuantity.setAttribute("uom", "EACH");
 					OrderQuantity.setTextContent(String.valueOf(selectOpt.getOrderQuantity()));
+
 					Element UnitPrice = createElement("oa:UnitPrice", Line, doc);
 					Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
-					UPAmount.setAttribute("currency", "");
-					UPAmount.setTextContent("");
+					UPAmount.setAttribute("currency", "USD");
+					UPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getActualCost()));
+
 					Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
 					UPPerQuantity.setAttribute("uom", "EACH");
-					UPPerQuantity.setTextContent("");
+					UPPerQuantity.setTextContent("1");
 					Element PartExtendedPrice = createElement("oa:ExtendedPrice", Line, doc);
 					PartExtendedPrice.setAttribute("currency", "");
-					PartExtendedPrice.setTextContent("");
+					extendedPrice = extendedPrice + selectOpt.getPrice().getActualCost() * selectOpt.getOrderQuantity();
+					PartExtendedPrice.setTextContent(String.valueOf(selectOpt.getPrice().getActualCost() * selectOpt.getOrderQuantity()));
+					totalPrice = totalPrice + selectOpt.getPrice().getCoreList() * selectOpt.getOrderQuantity();
 					Element PartTotalAmount = createElement("oa:TotalAmount", Line, doc);
-					PartTotalAmount.setAttribute("currency", "");
-					PartTotalAmount.setTextContent("");
+					PartTotalAmount.setAttribute("currency", "USD");
+					PartTotalAmount.setTextContent(String.valueOf(selectOpt.getPrice().getCoreList() * selectOpt.getOrderQuantity()));
+
 					Element BackOrderedQuantity = createElement("oa:BackOrderedQuantity", Line, doc);
 					BackOrderedQuantity.setAttribute("uom", "EACH");
 					BackOrderedQuantity.setTextContent("");
+
 				}
+
+				Element OwoOrderStatus = createElement("ow-o:OrderStatus", Line, doc);
+				createElement("oa:Code", OwoOrderStatus, doc, "Open");
+				createElement("oa:Description", OwoOrderStatus, doc, ordRespPart.getDesc());
+				createElement("ow-o:Status", OwoOrderStatus, doc, "success");
 				Element PartDocumentReferences = createElement("oa:DocumentReferences", Line, doc);
 				Element PartPurchaseOrderDocumentReference = createElement("oa:PurchaseOrderDocumentReference", PartDocumentReferences, doc);
-				createElement("oa:LineNumber", PartPurchaseOrderDocumentReference, doc, "1");
+				try {
+					createElement("oa:LineNumber",
+									PartPurchaseOrderDocumentReference,
+									doc,
+									String.valueOf(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(i)
+													.getLineNumber()));
+				} catch (Exception e) {
+					createElement("oa:LineNumber", PartPurchaseOrderDocumentReference, doc, String.valueOf(""));
+				}
 			}
+			i++;
 		}
+		Element ExtendedPrice = createElement("oa:ExtendedPrice", oaHeader, doc);
+		ExtendedPrice.setAttribute("currency", "USD");
+		ExtendedPrice.setTextContent(String.valueOf(extendedPrice));
+		Element TotalAmount = createElement("oa:TotalAmount", oaHeader, doc);
+		TotalAmount.setAttribute("currency", "USD");
+		TotalAmount.setTextContent(String.valueOf(totalPrice));
 
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
 		DOMSource source = new DOMSource(Envelope);
 		transformer.transform(source, result);
-		String xmlString = sw.toString();
-		return xmlString;
+		return sw.toString();
 
 	}
 
@@ -362,21 +421,21 @@ public class OwsXmlGenerator {
 			} else if (reqPartDetail.contains(inqRespPartinq.getLineCode() + "_" + inqRespPartinq.getPart())) {
 				inqLineNumber = reqPartDetail.indexOf(inqRespPartinq.getLineCode() + "_" + inqRespPartinq.getPart());
 			}
-			
+
 			if (inqLineNumber == -1) {
 				continue;
 			}
-			
-			lineNumber ++;
+
+			lineNumber++;
 			UtilityLogger.warn("Alternate parts: " + inqRespPartinq.getAlternateParts().size());
 
 			for (Iterator<SelectOption> iterator = inqRespPartinq.getLocations().iterator(); iterator.hasNext();) {
 				SelectOption selectOption = iterator.next();
 				addPartResponse(doc, Quote, envData, inqRespPartinq, selectOption, inqLineNumber, lineNumber);
 
-				lineNumber ++;
+				lineNumber++;
 			}
-			
+
 			for (Iterator<InquiryResponsePart> iterator = inqRespPartinq.getAlternateParts().iterator(); iterator.hasNext();) {
 				InquiryResponsePart part = iterator.next();
 
@@ -385,7 +444,7 @@ public class OwsXmlGenerator {
 
 					addPartResponse(doc, Quote, envData, inqRespPartinq, selectOptionAlt, inqLineNumber, lineNumber);
 
-					lineNumber ++;
+					lineNumber++;
 				}
 			}
 		}
@@ -398,8 +457,8 @@ public class OwsXmlGenerator {
 
 	}
 
-	private void addPartResponse(Document doc, Element Quote, Envelope envData,
-					InquiryResponsePart inqRespPartinq, SelectOption selectOp, int inqLineNumber, int lineNumber) {
+	private void addPartResponse(Document doc, Element Quote, Envelope envData, InquiryResponsePart inqRespPartinq, SelectOption selectOp,
+					int inqLineNumber, int lineNumber) {
 		Element Line = createElement("ow-o:Line", Quote, doc);
 		Element LineNumber = createElement("oa:LineNumber", Line, doc);
 		LineNumber.setTextContent(String.valueOf(lineNumber));
@@ -427,7 +486,6 @@ public class OwsXmlGenerator {
 		Element AvailableQuantity = createElement("ow-o:AvailableQuantity", QuantityInfo, doc);
 		AvailableQuantity.setAttribute("uom", "EACH");
 		AvailableQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getAvailable()));
-	
 
 		Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
 		Element ListPrice = createElement("ow-o:ListPrice", PriceInfo, doc);
