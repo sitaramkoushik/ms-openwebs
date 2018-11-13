@@ -306,6 +306,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		ordReqData.setToken(token);
 		ordReqData.setTestOrder(true);
 		ordReqData.setComment("test");
+		ordReqData.setPoNumber("testPO");
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
 
