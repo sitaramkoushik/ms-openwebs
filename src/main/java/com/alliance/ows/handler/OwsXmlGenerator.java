@@ -476,7 +476,7 @@ public class OwsXmlGenerator {
 			for (Iterator<InquiryResponsePart> iterator = inqRespPartinq.getAlternateParts().iterator(); iterator.hasNext();) {
 				InquiryResponsePart part = iterator.next();
 
-				for (Iterator<SelectOption> iterator2 = part.getLocations().iterator(); iterator.hasNext();) {
+				for (Iterator<SelectOption> iterator2 = part.getLocations().iterator(); iterator2.hasNext();) {
 					SelectOption selectOptionAlt = iterator2.next();
 
 					addPartResponse(doc, Quote, envData, inqRespPartinq, selectOptionAlt, inqLineNumber, lineNumber);
