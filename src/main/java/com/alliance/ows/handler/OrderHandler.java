@@ -8,6 +8,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.alliance.ows.model.inquire.Envelope;
+import com.alliance.ows.model.inquire.ProcessMessage;
+import com.alliance.ows.model.inquire.SOAPBody;
+import com.alliance.ows.model.inquire.SOAPBodyEnvelope;
+import com.alliance.ows.model.inquire.SOAPEnvelop;
 import com.alliance.ows.model.order.Addresses;
 import com.alliance.ows.model.order.ApplicationArea;
 import com.alliance.ows.model.order.Business;
@@ -49,6 +53,11 @@ import com.alliance.ows.model.order.To;
  * 
  */
 public class OrderHandler extends DefaultHandler {
+	private SOAPEnvelop soapEnvelop = null;
+	private SOAPBody soapBody = null;
+	private ProcessMessage processMessage = null;
+	private SOAPBodyEnvelope soapBodyEnvelope = null;
+	
 	private Envelope envelopeData = null;
 	private OrdHeader headerData = null;
 	private EndPoints endPoints = null;
@@ -131,6 +140,23 @@ public class OrderHandler extends DefaultHandler {
 
 		elementName = qName;
 		switch (qName) {
+		case "soap:Envelope":
+			soapEnvelop = new SOAPEnvelop();
+			break;
+		case "soap:Body":
+			soapBody = new SOAPBody();
+			soapEnvelop.setSoapBody(soapBody);
+			break;
+		case "ProcessMessage":
+			processMessage = new ProcessMessage();
+			soapBody.setProcessMessage(processMessage);
+			break;
+		case "envelope":
+			soapBodyEnvelope = new SOAPBodyEnvelope();
+			processMessage.setBodyEnvelope(soapBodyEnvelope);
+
+			soapBodyEnvelope.setEnvelope(envelopeData);
+			break;
 		// header initialization
 		case "ow-e:Header":
 			headerData = new OrdHeader();
@@ -232,7 +258,7 @@ public class OrderHandler extends DefaultHandler {
 			supplierParty = new SupplierParty();
 			parties.setSupplierParty(supplierParty);
 			break;
-		case "oa:ShipToParty":
+		case "ow-o:ShipToParty":
 			partyFlag = qName;
 			shipToPartyId = true;
 			shipToParty = new ShipToParty();
