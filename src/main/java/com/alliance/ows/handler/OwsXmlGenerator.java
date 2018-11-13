@@ -217,6 +217,8 @@ public class OwsXmlGenerator {
 					continue;
 				}
 				
+				com.alliance.ows.model.order.Line line = lineList.get(ordLineNumber);
+				
 				Element OrderItem = createElement("ow-o:OrderItem", Line, doc);
 				Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
 				Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
@@ -246,7 +248,12 @@ public class OwsXmlGenerator {
 
 					Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
 					Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
-					SupplierLocationId.setTextContent(String.valueOf(selectOpt.getNetwork()));
+					
+					if (line != null && line.getOrderItem() != null && line.getOrderItem().getOrderInfo() != null) {
+						SupplierLocationId.setTextContent(String.valueOf(line.getOrderItem().getOrderInfo().getSupplierLocationId()));
+					} else {
+						SupplierLocationId.setTextContent(String.valueOf(selectOpt.getNetwork()));
+					}
 
 					Element RequestLineGUID = createElement("ow-o:RequestLineGUID", OrderItem, doc);
 					RequestLineGUID.setTextContent(envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine().get(ordLineNumber)

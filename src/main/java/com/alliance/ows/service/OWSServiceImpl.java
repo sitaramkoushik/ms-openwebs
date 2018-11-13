@@ -97,19 +97,36 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 			bodyString = bodyString.replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
 
-			UtilityLogger.warn("Request data: " + bodyString);
 			SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 			saxParserFactory.setNamespaceAware(true);
 			SAXParser parser = saxParserFactory.newSAXParser();
-			InquiryHandler handler = new InquiryHandler();
 			InputStream in = new ByteArrayInputStream(bodyString.getBytes());
-			parser.parse(in, handler);
-			Envelope envelopeData = handler.getEnvelopeData();
 
 			String prefix = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><ProcessMessageResponse xmlns=\"http://www.carpartstechnologies.com/openwebs/\"><ProcessMessageResult>";
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
-			String actualResult = prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
+			String actualResult = "";
+			if(bodyString.contains("ow-o:ProcessPurchaseOrder")){
+
+				UtilityLogger.warn("Order request data: " + bodyString);
+				
+				OrderHandler handler = new OrderHandler();
+				parser.parse(in, handler);
+				Envelope envelopeData = handler.getOrderReqEnvelope();
+
+				actualResult = prepareOwsOrdReqData(getOrderPartData(envelopeData), envelopeData);
+
+			} else {
+
+				UtilityLogger.warn("Inquiry request data: " + bodyString);
+				
+				InquiryHandler handler = new InquiryHandler();
+				parser.parse(in, handler);
+				Envelope envelopeData = handler.getEnvelopeData();
+				
+				actualResult = prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
+			}
+			
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
@@ -197,12 +214,16 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				respJson.put(ConstantsUtility.MESSAGE, "Parts Not Found");
 			}
 		} catch (ParseException | JSONException e) {
+			UtilityLogger.error(e.getMessage(), e);
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		} catch (ConnectTimeoutException e) {
+			UtilityLogger.error(e.getMessage(), e);
 			throw new AESException(new Fault(FaultConstants.CONNECTION_TIMEOUT, new Object[] { e.getMessage() }));
 		} catch (IOException e) {
+			UtilityLogger.error(e.getMessage(), e);
 			throw new AESException(new Fault(FaultConstants.HOST_NOT_FOUND, new Object[] { e.getMessage() }));
 		} catch (Exception e) {
+			UtilityLogger.error(e.getMessage(), e);
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		}
 		return respJson.toString().replaceAll("\n|\r", "").replaceAll("(\\\\r|\\\\n)", "").replaceAll("\\\\/", "/").replaceAll("\\\\", "");
@@ -312,7 +333,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			try {
 				ordPartData.setSelLoc(Integer.parseInt(partData.getOrderItem().getOrderInfo().getSupplierLocationId()));
 			} catch (Exception e) {
-				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+				ordPartData.setSelLoc(100);
 			}
 			try {
 				ordPartData.setQty(Integer.parseInt(partData.getOrderQuantity()));

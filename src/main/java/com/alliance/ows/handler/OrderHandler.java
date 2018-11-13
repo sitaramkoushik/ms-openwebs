@@ -118,7 +118,7 @@ public class OrderHandler extends DefaultHandler {
 
 	@Override
 	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-		System.out.println("startPrefixMapping, prefix: " + prefix + ", uri: " + uri);
+		
 		if (prefix.equalsIgnoreCase("ow-e")) {
 			envelopeData = new Envelope();
 			envelopeData.setEnvAttrName("xmlns:" + prefix);
