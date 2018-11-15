@@ -486,7 +486,7 @@ public class OwsXmlGenerator {
 				for (Iterator<SelectOption> iterator2 = part.getLocations().iterator(); iterator2.hasNext();) {
 					SelectOption selectOptionAlt = iterator2.next();
 
-					addPartResponse(doc, Quote, envData, inqRespPartinq, selectOptionAlt, inqLineNumber, lineNumber);
+					addPartResponse(doc, Quote, envData, part, selectOptionAlt, inqLineNumber, lineNumber);
 
 					lineNumber++;
 				}
