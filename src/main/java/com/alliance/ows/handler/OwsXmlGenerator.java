@@ -559,7 +559,7 @@ public class OwsXmlGenerator {
 		}
 		Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
 		try {
-			SupplierLocationId.setTextContent(selectOp.getQuantity().getAvailable() + "::" + selectOp.getDisplay());
+			SupplierLocationId.setTextContent(selectOp.getDisplay());
 		} catch (Exception e) {
 			SupplierLocationId.setTextContent("");
 		}
