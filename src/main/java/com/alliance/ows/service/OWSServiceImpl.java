@@ -304,9 +304,9 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
 		}
 		ordReqData.setToken(token);
-		ordReqData.setTestOrder(true);
 		ordReqData.setComment("test");
 		ordReqData.setPoNumber("testPO");
+		ordReqData.setService("OpenWebs");
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
 
