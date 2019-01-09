@@ -124,10 +124,19 @@ public class OrderHandler extends DefaultHandler {
 			envelopeData.setEnvAttrName("xmlns:" + prefix);
 			envelopeData.setEnvAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("ow-o")) {
-			processPurchaseOrder = new ProcessPurchaseOrder();
+
+			if (processPurchaseOrder == null) {
+				processPurchaseOrder = new ProcessPurchaseOrder();
+			}
+			
 			processPurchaseOrder.setPpoAttrName("xmlns:" + prefix);
 			processPurchaseOrder.setPpoAttrValue(uri);
 		} else if (prefix.equalsIgnoreCase("oa")) {
+
+			if (processPurchaseOrder == null) {
+				processPurchaseOrder = new ProcessPurchaseOrder();
+			}
+			
 			processPurchaseOrder.setPpoAttrOaName("xmlns:" + prefix);
 			processPurchaseOrder.setPpoAttrOaValue(uri);
 		}
