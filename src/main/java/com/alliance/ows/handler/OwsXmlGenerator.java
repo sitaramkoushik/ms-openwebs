@@ -99,6 +99,8 @@ public class OwsXmlGenerator {
 				}
 			}
 		}
+		
+		List<OrderConfirm> lstOrderConfirms = ordRespData.getData();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
 		// Root element creation and Fields,Attribute setting
@@ -160,7 +162,10 @@ public class OwsXmlGenerator {
 		Element DocumentIds = createElement("oa:DocumentIds", oaHeader, doc);
 
 		Element SupplierDocumentId = createElement("oa:SupplierDocumentId", DocumentIds, doc);
-		createElement("oa:Id", SupplierDocumentId, doc, "");
+		
+		if (lstOrderConfirms != null && lstOrderConfirms.size() > 0) {
+			createElement("oa:Id", SupplierDocumentId, doc, lstOrderConfirms.get(0).getConfirm());
+		}
 
 		Element DocumentReferences = createElement("oa:DocumentReferences", oaHeader, doc);
 		Element PurchaseOrderDocumentReference = createElement("oa:PurchaseOrderDocumentReference", DocumentReferences, doc);

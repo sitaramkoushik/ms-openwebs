@@ -145,7 +145,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 		InquiryRequestData inqReqData = new InquiryRequestData();
 		inqReqData.setParts(partData);
-		String token = getTokenByOrgId("DummyOrg");
+		String token = getTokenByOrgId(envelopeData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getOaHeader().getParties().getCustomerParty().getPartyId().getId());
 		inqReqData.setToken(token);
 		inqReqData.setLookupType("IIS");
 		inqReqData.setLookupInUse("3");
@@ -299,7 +299,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			ordReqPart.setLocations(locations);
 		}
 		try {
-			token = getTokenByOrgId("DummyOrg");
+			token = getTokenByOrgId(envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getParties().getCustomerParty().getPartyId().getId());
 		} catch (JSONException e1) {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
 		}
@@ -365,14 +365,15 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	 * @return token
 	 * @throws JSONException
 	 */
-	private String getTokenByOrgId(String orgId) throws JSONException {
+	private String getTokenByOrgId(String screenName) throws JSONException {
 		String json = null;
 		JSONObject loginData = new JSONObject();
 		try {
-			loginData.put("username", "aa999jsmith");
-			loginData.put("password", "123456");
+			loginData.put("username", screenName);
+			loginData.put("password", "a!Q@.3!7(ESdsj'P=P{[jaKXSw3J^9_ASkFDWdK%C*MhafxU~gims4r*5aQSG,A");
+			loginData.put("useSecretKey", true);
 		} catch (JSONException e1) {
-			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
+			throw new AESException(new Fault(FaultConstants.V3_TOKEN_CREATION_FAILED, new Object[] { e1.getMessage() }));
 		}
 
 		HttpPost httpPost = new HttpPost(URI.create(tokenBaseURL + "/userservice/active"));
