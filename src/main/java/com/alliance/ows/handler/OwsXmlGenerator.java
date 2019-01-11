@@ -28,6 +28,7 @@ import com.alliance.ows.model.inquire.SelectOption;
 import com.alliance.ows.model.order.OrderConfirm;
 import com.alliance.ows.model.order.OrderResponseData;
 import com.alliance.ows.model.order.OrderResponsePart;
+import com.alliance.utils.ConstantsUtility;
 
 /**
  *
@@ -162,9 +163,10 @@ public class OwsXmlGenerator {
 		Element DocumentIds = createElement("oa:DocumentIds", oaHeader, doc);
 
 		Element SupplierDocumentId = createElement("oa:SupplierDocumentId", DocumentIds, doc);
-		
+		OrderConfirm orderConfirm = null;
 		if (lstOrderConfirms != null && lstOrderConfirms.size() > 0) {
-			createElement("oa:Id", SupplierDocumentId, doc, lstOrderConfirms.get(0).getConfirm());
+			orderConfirm = lstOrderConfirms.get(0);
+			createElement("oa:Id", SupplierDocumentId, doc, orderConfirm.getConfirm());
 		}
 
 		Element DocumentReferences = createElement("oa:DocumentReferences", oaHeader, doc);
@@ -181,9 +183,15 @@ public class OwsXmlGenerator {
 		// Order status detail
 		Element OrderStatus = createElement("ow-o:OrderStatus", oaHeader, doc);
 
-		createElement("oa:Code", OrderStatus, doc, "Open");
-		createElement("oa:Description", OrderStatus, doc, "");
-		createElement("ow-o:Status", OrderStatus, doc, ordRespData.getStatus());
+		if (orderConfirm != null && !orderConfirm.isError()) {
+			createElement("oa:Code", OrderStatus, doc, "Open");
+			createElement("oa:Description", OrderStatus, doc, "");
+			createElement("ow-o:Status", OrderStatus, doc, ConstantsUtility.SUCCESS);
+		} else {
+			createElement("oa:Code", OrderStatus, doc, "Hold");
+			createElement("oa:Description", OrderStatus, doc, orderConfirm.getMessage());
+			createElement("ow-o:Status", OrderStatus, doc, ConstantsUtility.FAIL);
+		}
 
 		/*Element Charges = createElement("oa:Charges", oaHeader, doc);
 		Element Charge = createElement("oa:Charge", Charges, doc);
