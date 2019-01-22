@@ -492,18 +492,7 @@ public class OwsXmlGenerator {
 
 				lineNumber++;
 			}
-
-			for (Iterator<InquiryResponsePart> iterator = inqRespPartinq.getAlternateParts().iterator(); iterator.hasNext();) {
-				InquiryResponsePart part = iterator.next();
-
-				for (Iterator<SelectOption> iterator2 = part.getLocations().iterator(); iterator2.hasNext();) {
-					SelectOption selectOptionAlt = iterator2.next();
-
-					addPartResponse(doc, Quote, envData, part, selectOptionAlt, inqLineNumber, lineNumber);
-
-					lineNumber++;
-				}
-			}
+ 
 		}
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
@@ -547,18 +536,18 @@ public class OwsXmlGenerator {
 		Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
 		Element ListPrice = createElement("ow-o:ListPrice", PriceInfo, doc);
 		Element Amount = createElement("oa:Amount", ListPrice, doc);
-		Amount.setAttribute("currency", "");
+		Amount.setAttribute("currency", "USD");
 		Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
 		Element PerQuantity = createElement("oa:PerQuantity", ListPrice, doc);
 		PerQuantity.setAttribute("uom", "EACH");
-		PerQuantity.setTextContent("");
+		PerQuantity.setTextContent(""+inqRespPartinq.getPerCarQty());
 		Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
 		Element CPAmount = createElement("oa:Amount", CorePrice, doc);
-		CPAmount.setAttribute("currency", "");
+		CPAmount.setAttribute("currency", "USD");
 		CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
 		Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
 		CPPerQuantity.setAttribute("uom", "EACH");
-		CPPerQuantity.setTextContent("");
+		CPPerQuantity.setTextContent(""+inqRespPartinq.getPerCarQty());
 		Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
 		try {
 			String temp = envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(inqLineNumber).getOrderItem()
@@ -613,6 +602,103 @@ public class OwsXmlGenerator {
 		} catch (Exception e) {
 			createElement("oa:LineNumber", RFQDocumentReference, doc, String.valueOf(""));
 		}
+		
+		if (selectOp.getNetwork() == 100) {
+
+			for (Iterator<InquiryResponsePart> iterator = inqRespPartinq.getAlternateParts().iterator(); iterator.hasNext();) {
+				InquiryResponsePart part = iterator.next();
+
+				for (Iterator<SelectOption> iterator2 = part.getLocations().iterator(); iterator2.hasNext();) {
+					SelectOption selectOptionAlt = iterator2.next();
+					addAltPartResponse(doc, Quote, envData, part, selectOptionAlt, inqLineNumber, lineNumber, Line);
+				}
+			}
+		}		
+	}
+
+	private void addAltPartResponse(Document doc, Element Quote, Envelope envData, InquiryResponsePart inqRespPartinq, SelectOption selectOp,
+					int inqLineNumber, int lineNumber, Element Line) {
+		Element altLine = createElement("ow-o:AlternateLine", Line, doc);
+		Element OrderItem = createElement("ow-o:OrderItem", altLine, doc);
+		Element ItemIds = createElement("oa:ItemIds", OrderItem, doc);
+		Element SupplierItemId = createElement("oa:SupplierItemId", ItemIds, doc);
+		createElement("oa:Id", SupplierItemId, doc, String.valueOf(inqRespPartinq.getPart()));
+		try {
+			createElement("oa:ItemType",
+							OrderItem,
+							doc,
+							String.valueOf(envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(inqLineNumber)
+											.getOrderItem().getItemType()));
+		} catch (Exception e) {
+			createElement("oa:ItemType", OrderItem, doc, String.valueOf("Part"));
+		}
+
+		Element ItemInfo = createElement("ow-o:ItemInfo", OrderItem, doc);
+		Element ManufacturerInfo = createElement("ow-o:ManufacturerInfo", ItemInfo, doc);
+		createElement("ow-o:SupplierManufacturer", ManufacturerInfo, doc, inqRespPartinq.getLineCode());
+		Element QuantityInfo = createElement("ow-o:QuantityInfo", OrderItem, doc);
+		Element RequestedQuantity = createElement("ow-o:RequestedQuantity", QuantityInfo, doc);
+		RequestedQuantity.setAttribute("uom", "EACH");
+		RequestedQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getRequested()));
+		Element AvailableQuantity = createElement("ow-o:AvailableQuantity", QuantityInfo, doc);
+		AvailableQuantity.setAttribute("uom", "EACH");
+		AvailableQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getAvailable()));
+
+		Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
+		Element ListPrice = createElement("ow-o:ListPrice", PriceInfo, doc);
+		Element Amount = createElement("oa:Amount", ListPrice, doc);
+		Amount.setAttribute("currency", "USD");
+		Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
+		Element PerQuantity = createElement("oa:PerQuantity", ListPrice, doc);
+		PerQuantity.setAttribute("uom", "EACH");
+		PerQuantity.setTextContent("" + inqRespPartinq.getPerCarQty());
+		Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
+		Element CPAmount = createElement("oa:Amount", CorePrice, doc);
+		CPAmount.setAttribute("currency", "USD");
+		CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
+		Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
+		CPPerQuantity.setAttribute("uom", "EACH");
+		CPPerQuantity.setTextContent("" + inqRespPartinq.getPerCarQty());
+		Element OrderInfo = createElement("ow-o:OrderInfo", OrderItem, doc);
+		try {
+			String temp = envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(inqLineNumber).getOrderItem()
+							.getRequestLineGUID();
+
+			if (temp != null && !temp.isEmpty()) {
+				Element RequestLineGUID = createElement("ow-o:RequestLineGUID", OrderItem, doc);
+				RequestLineGUID.setTextContent(temp);
+			}
+		} catch (Exception e) {
+		}
+		Element SupplierLocationId = createElement("ow-o:SupplierLocationId", OrderInfo, doc);
+		try {
+			SupplierLocationId.setTextContent(selectOp.getDisplay());
+		} catch (Exception e) {
+			SupplierLocationId.setTextContent("");
+		}
+		Element UnitPrice = createElement("oa:UnitPrice", altLine, doc);
+		Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
+		UPAmount.setAttribute("currency", "USD");
+		try {
+			UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
+		} catch (Exception e) {
+			UPAmount.setTextContent("0.0");
+		}
+		Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
+		UPPerQuantity.setAttribute("uom", "EACH");
+		try {
+			UPPerQuantity.setTextContent(String.valueOf(inqRespPartinq.getPerCarQty()));
+		} catch (Exception e) {
+			UPPerQuantity.setTextContent("1");
+		}
+
+		if (inqRespPartinq.getDescription() != null) {
+			createElement("oa:Description", altLine, doc, inqRespPartinq.getDescription());
+		} else {
+			createElement("oa:Description", altLine, doc, "");
+		}
+		Element altType = createElement("ow-o:AlternateType", altLine, doc);
+		altType.setTextContent("alt");
 	}
 
 }
