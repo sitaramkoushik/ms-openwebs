@@ -90,6 +90,9 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 	@Override
 	public String doOWSInq(String bodyString) throws Exception {
+
+		long startTime = System.currentTimeMillis();
+		String screenName = "";
 		try {
 
 			bodyString = StringEscapeUtils.unescapeXml(bodyString);
@@ -106,37 +109,63 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
 			String actualResult = "";
-			if(bodyString.contains("ow-o:ProcessPurchaseOrder")){
+			if (bodyString.contains("ow-o:ProcessPurchaseOrder")) {
 
 				UtilityLogger.warn("Order request data: " + bodyString);
-				
+
 				OrderHandler handler = new OrderHandler();
 				parser.parse(in, handler);
 				Envelope envelopeData = handler.getOrderReqEnvelope();
 
+				screenName = getScreenName(envelopeData, false);
 				actualResult = prepareOwsOrdReqData(getOrderPartData(envelopeData), envelopeData);
 
 			} else {
 
 				UtilityLogger.warn("Inquiry request data: " + bodyString);
-				
+
 				InquiryHandler handler = new InquiryHandler();
 				parser.parse(in, handler);
 				Envelope envelopeData = handler.getEnvelopeData();
-				
+
+				screenName = getScreenName(envelopeData, true);
 				actualResult = prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
 			}
-			
+
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
 			// String finalResult = prefix + actualResult + suffix;
 
-			UtilityLogger.warn("Response data: " + finalResult);
+			UtilityLogger.warn("Response returning in " + (System.currentTimeMillis() - startTime) + "ms for " + screenName + ". " + finalResult);
 			return finalResult;
+		} catch (AESException e) {
+			e.printStackTrace();
+			UtilityLogger.warn("AESException while getting the Response returning in " + (System.currentTimeMillis() - startTime) + "ms for "
+							+ screenName);
+			throw e;
 		} catch (Exception e) {
 			e.printStackTrace();
+			UtilityLogger.warn("Exception while getting the Response returning in " + (System.currentTimeMillis() - startTime) + "ms for "
+							+ screenName);
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+		}
+	}
+
+	private String getScreenName(Envelope envelopeData, boolean isInquiry) {
+		try {
+
+			if (isInquiry) {
+				return envelopeData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getOaHeader().getParties().getCustomerParty()
+								.getPartyId().getId();
+			} else {
+				return envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getParties()
+								.getCustomerParty().getPartyId().getId();
+			}
+
+		} catch (Exception e) {
+			UtilityLogger.error("Exception occurred in getScreenName: " + e.getMessage());
+			throw new AESException(new Fault(FaultConstants.V3_TOKEN_CREATION_FAILED, new Object[] { e.getMessage() }));
 		}
 	}
 
@@ -145,7 +174,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 		InquiryRequestData inqReqData = new InquiryRequestData();
 		inqReqData.setParts(partData);
-		String token = getTokenByOrgId(envelopeData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getOaHeader().getParties().getCustomerParty().getPartyId().getId());
+		String token = getTokenByOrgId(getScreenName(envelopeData, true));
 		inqReqData.setToken(token);
 		inqReqData.setLookupType("IIS");
 		inqReqData.setLookupInUse("3");
@@ -177,6 +206,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	private String getSellNetworkData(String requestData, String sellNetworkURL, int reqType, Envelope envelopeData) {
 		JSONObject respJson = new JSONObject();
 		try {
+			long startTime = System.currentTimeMillis();
 			HttpResponse response = getHttpResponse(requestData, sellNetworkURL);
 			if (response.getEntity() != null) {
 				long contentLength = response.getEntity().getContentLength();
@@ -189,6 +219,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 									&& json.getString(ConstantsUtility.STATUS).equals(ConstantsUtility.SUCCESS)) {
 
 						String result = "";
+						UtilityLogger.warn("SellNetwork response received in " + (System.currentTimeMillis() - startTime) + "ms");
 
 						switch (reqType) {
 						case INQ:
@@ -299,7 +330,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			ordReqPart.setLocations(locations);
 		}
 		try {
-			token = getTokenByOrgId(envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getParties().getCustomerParty().getPartyId().getId());
+			token = getTokenByOrgId(getScreenName(envelopeData, false));
 		} catch (JSONException e1) {
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
 		}
@@ -368,6 +399,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	private String getTokenByOrgId(String screenName) throws JSONException {
 		String json = null;
 		JSONObject loginData = new JSONObject();
+		long startTime = System.currentTimeMillis();
 		try {
 			loginData.put("username", screenName);
 			loginData.put("password", "a!Q@.3!7(ESdsj'P=P{[jaKXSw3J^9_ASkFDWdK%C*MhafxU~gims4r*5aQSG,A");
@@ -378,6 +410,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 		HttpPost httpPost = new HttpPost(URI.create(tokenBaseURL + "/userservice/active"));
 		httpPost.addHeader(ConstantsUtility.API_KEY, x_api_key);
+		String token = "";
 		try {
 			HttpClient httpClient = HttpClients.createDefault();
 			StringEntity stringEntity = new StringEntity(loginData.toString());
@@ -385,14 +418,21 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			httpPost.setEntity(stringEntity);
 			HttpResponse response = httpClient.execute(httpPost);
 			json = EntityUtils.toString(response.getEntity());
+			token = new JSONObject(json).getString(ConstantsUtility.TOKEN);
+			UtilityLogger.warn("Got the token in " + (System.currentTimeMillis() - startTime) + "ms for " + screenName);
+
 		} catch (ParseException e) {
-			UtilityLogger.error(e.getCause());
+			UtilityLogger.error("Could not get the token (ParseException) in: " + (System.currentTimeMillis() - startTime) + "ms, " + e.getCause());
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 		} catch (IOException e) {
-			UtilityLogger.error(e.getCause());
+			UtilityLogger.error("Could not get the token (IOException) in: " + (System.currentTimeMillis() - startTime) + "ms, " + e.getCause());
 			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
+		} catch (Exception e) {
+			UtilityLogger.error("Could not get the token (Exception) in: " + (System.currentTimeMillis() - startTime) + "ms, " + e.getCause());
+			throw new AESException(new Fault(FaultConstants.V3_TOKEN_CREATION_FAILED, new Object[] { e.getMessage() }));
 		}
-		return new JSONObject(json).getString(ConstantsUtility.TOKEN);
+
+		return token;
 	}
 
 	public List<InquiryRequestPart> getPartData(Envelope envelope) {

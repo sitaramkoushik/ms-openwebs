@@ -58,11 +58,18 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public String getDescription() {
+		if(description != null){
+			return description.trim();
+		}
 		return description;
 	}
 
 	public void setDescription(String desc) {
-		this.description = desc;
+		if (desc != null) {
+			this.description = desc.trim();
+		} else {
+			this.description = desc;
+		}
 	}
 
 	public Vector<SelectOption> getLocations() {
@@ -181,7 +188,11 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public void setPerCarQty(long perCarQty) {
-		this.perCarQty = perCarQty;
+		if (perCarQty == 0) {
+			this.perCarQty = 1;
+		} else {
+			this.perCarQty = perCarQty;
+		}
 	}
 
 	public InquiryResponsePart() {
