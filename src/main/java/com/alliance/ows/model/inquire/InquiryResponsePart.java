@@ -27,7 +27,7 @@ public class InquiryResponsePart implements Serializable {
 	private long partId = 0;
 	private String brandImage;
 	private String partImage;
-	private long current_qty = 1;
+	private long qty = 0;
 	private Price price100 = new Price();
 	private List<Integer> partlookupType = new ArrayList<Integer>();
 	private long perCarQty = 0;
@@ -58,18 +58,11 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public String getDescription() {
-		if(description != null){
-			return description.trim();
-		}
 		return description;
 	}
 
 	public void setDescription(String desc) {
-		if (desc != null) {
-			this.description = desc.trim();
-		} else {
-			this.description = desc;
-		}
+		this.description = desc;
 	}
 
 	public Vector<SelectOption> getLocations() {
@@ -139,7 +132,7 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public long getQty() {
-		return current_qty;
+		return qty;
 	}
 
 	public boolean equals(Object p) {
@@ -165,8 +158,8 @@ public class InquiryResponsePart implements Serializable {
 		return equality;
 	}
 
-	public void setQty(long current_qty) {
-		this.current_qty = current_qty;
+	public void setQty(long qty) {
+		this.qty = qty;
 	}
 
 	public void updateLocationBuyQty() {
@@ -188,11 +181,7 @@ public class InquiryResponsePart implements Serializable {
 	}
 
 	public void setPerCarQty(long perCarQty) {
-		if (perCarQty == 0) {
-			this.perCarQty = 1;
-		} else {
-			this.perCarQty = perCarQty;
-		}
+		this.perCarQty = perCarQty;
 	}
 
 	public InquiryResponsePart() {
