@@ -100,7 +100,7 @@ public class OwsXmlGenerator {
 				}
 			}
 		}
-		
+
 		List<OrderConfirm> lstOrderConfirms = ordRespData.getData();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
@@ -334,7 +334,7 @@ public class OwsXmlGenerator {
 
 	// Inquire response XML formatting
 	public String getInquireRespXml(InquiryResponseData inqRespdata, Envelope envData) throws ParserConfigurationException, TransformerException,
-	MalformedURLException {
+					MalformedURLException {
 		List<String> reqPartDetail = new ArrayList<>();
 		List<Line> lineList = new ArrayList<Line>();
 		try {
@@ -532,7 +532,7 @@ public class OwsXmlGenerator {
 		Element AvailableQuantity = createElement("ow-o:AvailableQuantity", QuantityInfo, doc);
 		AvailableQuantity.setAttribute("uom", "EACH");
 		AvailableQuantity.setTextContent(String.valueOf(selectOp.getQuantity().getAvailable()));
-		
+
 		Element PriceInfo = createElement("ow-o:PriceInfo", OrderItem, doc);
 		Element ListPrice = createElement("ow-o:ListPrice", PriceInfo, doc);
 		Element Amount = createElement("oa:Amount", ListPrice, doc);
@@ -544,20 +544,21 @@ public class OwsXmlGenerator {
 		Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
 		Element CPAmount = createElement("oa:Amount", CorePrice, doc);
 		CPAmount.setAttribute("currency", "USD");
-		
+
 		try {
-			CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
-			Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
-		} catch (Exception e) {
-			try {
+			if (selectOp.getNetwork() == 100) {
 				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
 				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
-			}catch (Exception e1) {
-				Amount.setTextContent("0.0");
-				CPAmount.setTextContent("0.0");
-			} 
+			} else {
+				CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
+				Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
+			}
+
+		} catch (Exception e) {
+			Amount.setTextContent("0.0");
+			CPAmount.setTextContent("0.0");
 		}
-		
+
 		Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
 		CPPerQuantity.setAttribute("uom", "EACH");
 		CPPerQuantity.setTextContent(String.valueOf(inqRespPartinq.getPerCarQty()));
@@ -582,14 +583,13 @@ public class OwsXmlGenerator {
 		Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
 		UPAmount.setAttribute("currency", "USD");
 		try {
-			UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
-		} catch (Exception e) {
-
-			try {
+			if (selectOp.getNetwork() == 100) {
 				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
-			} catch (Exception e1) {
-				UPAmount.setTextContent("0.0");
+			} else {
+				UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
 			}
+		} catch (Exception e) {
+			UPAmount.setTextContent("0.0");
 		}
 		Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
 		UPPerQuantity.setAttribute("uom", "EACH");
@@ -620,8 +620,8 @@ public class OwsXmlGenerator {
 		} catch (Exception e) {
 			createElement("oa:LineNumber", RFQDocumentReference, doc, String.valueOf(""));
 		}
-		
-		if(selectOp.getNetwork() == 100){
+
+		if (selectOp.getNetwork() == 100) {
 
 			for (Iterator<InquiryResponsePart> iterator = inqRespPartinq.getAlternateParts().iterator(); iterator.hasNext();) {
 				InquiryResponsePart part = iterator.next();
@@ -632,7 +632,7 @@ public class OwsXmlGenerator {
 					addAltPartResponse(doc, Quote, envData, part, selectOptionAlt, inqLineNumber, lineNumber, Line);
 				}
 			}
-		}		
+		}
 	}
 
 	private void addAltPartResponse(Document doc, Element Quote, Envelope envData, InquiryResponsePart inqRespPartinq, SelectOption selectOp,
@@ -674,20 +674,19 @@ public class OwsXmlGenerator {
 		Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
 		Element CPAmount = createElement("oa:Amount", CorePrice, doc);
 		CPAmount.setAttribute("currency", "USD");
-		
+
 		try {
-			Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
-			CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
-		} catch (Exception e) {
-			try {
+			if (selectOp.getNetwork() == 100) {
 				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
 				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
-			}catch (Exception e1) {
-				Amount.setTextContent("0.0");
-				CPAmount.setTextContent("0.0");
-			} 
+			} else {
+				Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
+				CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
+			}
+		} catch (Exception e) {
+			Amount.setTextContent("0.0");
+			CPAmount.setTextContent("0.0");
 		}
-		
 		Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
 		CPPerQuantity.setAttribute("uom", "EACH");
 		CPPerQuantity.setTextContent(String.valueOf(inqRespPartinq.getPerCarQty()));
@@ -695,7 +694,6 @@ public class OwsXmlGenerator {
 		try {
 			String temp = envData.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine().get(inqLineNumber).getOrderItem()
 							.getRequestLineGUID();
-
 			if (temp != null && !temp.isEmpty()) {
 				Element RequestLineGUID = createElement("ow-o:RequestLineGUID", OrderItem, doc);
 				RequestLineGUID.setTextContent(temp);
@@ -712,13 +710,13 @@ public class OwsXmlGenerator {
 		Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
 		UPAmount.setAttribute("currency", "USD");
 		try {
-			UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
-		} catch (Exception e) {
-			try {
+			if (selectOp.getNetwork() == 100) {
 				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
-			} catch (Exception e1) {
-				UPAmount.setTextContent("0.0");
+			} else {
+				UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
 			}
+		} catch (Exception e) {
+			UPAmount.setTextContent("0.0");
 		}
 		Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
 		UPPerQuantity.setAttribute("uom", "EACH");
@@ -732,7 +730,7 @@ public class OwsXmlGenerator {
 			createElement("oa:Description", altLine, doc, inqRespPartinq.getDescription());
 		} else {
 			createElement("oa:Description", altLine, doc, "");
-		} 
+		}
 		Element altType = createElement("ow-o:AlternateType", altLine, doc);
 		altType.setTextContent("alt");
 	}
