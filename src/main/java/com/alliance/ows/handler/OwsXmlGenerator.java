@@ -550,8 +550,8 @@ public class OwsXmlGenerator {
 				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
 				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
 			} else {
-				CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
-				Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
+				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCoreCost()));
+				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getList()));
 			}
 
 		} catch (Exception e) {
@@ -586,7 +586,7 @@ public class OwsXmlGenerator {
 			if (selectOp.getNetwork() == 100) {
 				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
 			} else {
-				UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
+				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCost()));
 			}
 		} catch (Exception e) {
 			UPAmount.setTextContent("0.0");
