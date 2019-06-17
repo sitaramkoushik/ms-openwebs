@@ -336,7 +336,14 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		}
 		ordReqData.setToken(token);
 		ordReqData.setComment("test");
-		ordReqData.setPoNumber("testPO");
+		String poNumber = "";
+		try {
+			poNumber = envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getDocuments()
+							.getCustomerDocumentId().getId();
+		} catch (Exception e) {
+			poNumber = "testPO";
+		}
+		ordReqData.setPoNumber(poNumber);
 		ordReqData.setService("OpenWebs");
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
