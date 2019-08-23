@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -26,8 +27,11 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.alliance.fault.AESException;
 import com.alliance.fault.Fault;
@@ -48,7 +52,10 @@ import com.alliance.ows.model.order.OrderResponseData;
 import com.alliance.ows.model.order.SelectOption;
 import com.alliance.utils.ConstantsUtility;
 import com.alliance.utils.MPFPResourceReader;
+import com.alliance.utils.RestUtil;
 import com.google.gson.Gson;
+
+import okhttp3.Request;
 
 /**
  *
@@ -336,7 +343,14 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		}
 		ordReqData.setToken(token);
 		ordReqData.setComment("test");
-		ordReqData.setPoNumber("testPO");
+		String poNumber = "";
+		try {
+			poNumber = envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getDocuments()
+							.getCustomerDocumentId().getId();
+		} catch (Exception e) {
+			poNumber = "testPO";
+		}
+		ordReqData.setPoNumber(poNumber);
 		ordReqData.setService("OpenWebs");
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
@@ -362,10 +376,27 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			} catch (Exception e) {
 				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e.getMessage() }));
 			}
+			ordPartData.setSelLoc(100);
 			try {
-				ordPartData.setSelLoc(Integer.parseInt(partData.getOrderItem().getOrderInfo().getSupplierLocationId()));
+				String token = "";
+				try {
+					token = getTokenByOrgId(getScreenName(envelope, false));
+				} catch (JSONException e1) {
+					throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
+				}
+				JSONArray sellNetResponse = getSellNetworkInfo(token);
+				String networkResp = partData.getOrderItem().getOrderInfo().getSupplierLocationId();
+				if (sellNetResponse != null) {
+					for (int i = 0; i < sellNetResponse.length(); i++) {
+						JSONObject sellNet = (JSONObject) sellNetResponse.get(i);
+						if (sellNet.get("name").toString().equalsIgnoreCase(networkResp)) {
+							ordPartData.setSelLoc(sellNet.getInt("seqNo"));
+							break;
+						}
+					}
+				}
 			} catch (Exception e) {
-				ordPartData.setSelLoc(100);
+				UtilityLogger.error("Exception occurred while setting setSelLoc: " + e.getMessage());
 			}
 			try {
 				ordPartData.setQty(Integer.parseInt(partData.getOrderQuantity()));
@@ -474,5 +505,42 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			obj.add(inqPartData);
 		}
 		return obj;
+	}
+	
+	// Get sellNetwork information from user token
+	public JSONArray getSellNetworkInfo(String userToken) {
+		String userInfo = null;
+		JSONObject userRESJSON;
+		String userJsonStr = null;
+		JSONArray array = null;
+		try {
+			userInfo = URLDecoder.decode(getTokenServiceUserInfo(userToken), "UTF-8");
+			if (userInfo != null && !userInfo.isEmpty() && userInfo.contains("userInfo")) {
+				userRESJSON = new JSONObject(userInfo);
+				userJsonStr = userRESJSON.getString("userInfo");
+				JSONObject userResp = new JSONObject(userJsonStr);
+				array = userResp.getJSONArray("sellnetwork");
+			}
+		} catch (Exception e) {
+			UtilityLogger.error("Exception occurred while getting userInfo from token: " + e.getMessage());
+		}
+		return array;
+	}
+
+	@SuppressWarnings("static-access")
+	public String getTokenServiceUserInfo(String token) {
+		UriComponents uri = UriComponentsBuilder.newInstance().fromUriString(tokenBaseURL).path("/tokenservice/get").queryParam("token", token)
+						.build();
+		Request request = null;
+		if (token != null) {
+			request = new Request.Builder().url(uri.toUriString()).addHeader(ConstantsUtility.API_KEY, x_api_key).build();
+		}
+		String userData = "";
+		try {
+			userData = RestUtil.client.newCall(request).execute().body().string();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return userData;
 	}
 }
