@@ -64,13 +64,13 @@ import okhttp3.Request;
  */
 public class OWSServiceImpl implements OWSServiceInterface {
 
-	private static MPFPResourceReader mpfpReader;
 	private static String sellNetworkInqUrl;
 	private static String sellNetworkOrderUrl;
 	private static Gson gson;
 	private static int TIMEOUT_MILLIS;
 	private static RequestConfig requestConfig = null;
 	private static OwsXmlGenerator xmlGenerator;
+	private static String tokenPassword;
 	private static String tokenBaseURL;
 	private static String x_api_key;
 	private static final int INQ = 1;
@@ -78,7 +78,9 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 	static {
 		xmlGenerator = new OwsXmlGenerator();
-		mpfpReader = MPFPResourceReader.getInstance();
+		MPFPResourceReader mpfpReader = MPFPResourceReader.getInstance();
+		tokenPassword = mpfpReader.getString("security.token.password");
+		
 		sellNetworkInqUrl = mpfpReader.getString("sellnetwork.inquire.url");
 		sellNetworkOrderUrl = mpfpReader.getString("sellnetwork.order.url");
 
@@ -125,7 +127,10 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				Envelope envelopeData = handler.getOrderReqEnvelope();
 
 				screenName = getScreenName(envelopeData, false);
-				actualResult = prepareOwsOrdReqData(getOrderPartData(envelopeData), envelopeData);
+				String token = getTokenByScreenName(screenName);
+				OrderRequestData orderRequestData = getOrderPartData(envelopeData, token);
+				
+				actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData, token);
 
 			} else {
 
@@ -136,7 +141,10 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				Envelope envelopeData = handler.getEnvelopeData();
 
 				screenName = getScreenName(envelopeData, true);
-				actualResult = prepareOwsInqReqData(getPartData(envelopeData), envelopeData);
+				String token = getTokenByScreenName(screenName);
+				List<InquiryRequestPart> inquiryRequestParts = getPartData(envelopeData);
+				
+				actualResult = prepareOwsInqReqData(inquiryRequestParts, envelopeData, token);
 			}
 
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
@@ -176,12 +184,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		}
 	}
 
-	public String prepareOwsInqReqData(List<InquiryRequestPart> partData, Envelope envelopeData) throws ParserConfigurationException,
+	private String prepareOwsInqReqData(List<InquiryRequestPart> partData, Envelope envelopeData, String token) throws ParserConfigurationException,
 					TransformerException {
 
 		InquiryRequestData inqReqData = new InquiryRequestData();
 		inqReqData.setParts(partData);
-		String token = getTokenByOrgId(getScreenName(envelopeData, true));
 		inqReqData.setToken(token);
 		inqReqData.setLookupType("IIS");
 		inqReqData.setLookupInUse("3");
@@ -206,7 +213,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return response;
 	}
 
-	public String inqRequestToSellNetwork(String requestData, Envelope envelopeData) {
+	private String inqRequestToSellNetwork(String requestData, Envelope envelopeData) {
 		return getSellNetworkData(requestData, sellNetworkInqUrl, INQ, envelopeData);
 	}
 
@@ -267,7 +274,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return respJson.toString().replaceAll("\n|\r", "").replaceAll("(\\\\r|\\\\n)", "").replaceAll("\\\\/", "/").replaceAll("\\\\", "");
 	}
 
-	public String inqRespParseToXml(String respJson, Envelope envelopeData) throws MalformedURLException, ParserConfigurationException,
+	private String inqRespParseToXml(String respJson, Envelope envelopeData) throws MalformedURLException, ParserConfigurationException,
 					TransformerException {
 
 		InquiryResponseData obj = gson.fromJson(respJson, InquiryResponseData.class);
@@ -289,7 +296,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			String prefix = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><ProcessMessageResponse xmlns=\"http://www.carpartstechnologies.com/openwebs/\"><ProcessMessageResult>";
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
-			String actualResult = prepareOwsOrdReqData(getOrderPartData(envelopeData), envelopeData);
+			String screenName = getScreenName(envelopeData, false);
+			String token = getTokenByScreenName(screenName);
+			OrderRequestData orderRequestData = getOrderPartData(envelopeData, token);
+			
+			String actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData, token);			
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
@@ -304,8 +315,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 	}
 
-	public String prepareOwsOrdReqData(OrderRequestData ordReqData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
-		String token = "";
+	private String prepareOwsOrdReqData(OrderRequestData ordReqData, Envelope envelopeData, String token) throws ParserConfigurationException, TransformerException {
 		List<OrderRequestPart> ordReqPartList = ordReqData.getParts();
 		for (OrderRequestPart ordReqPart : ordReqPartList) {
 			ordReqPart.setAdded_to_cart(ordReqPart.getQty());
@@ -336,11 +346,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			}
 			ordReqPart.setLocations(locations);
 		}
-		try {
-			token = getTokenByOrgId(getScreenName(envelopeData, false));
-		} catch (JSONException e1) {
-			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
-		}
 		ordReqData.setToken(token);
 		ordReqData.setComment("test");
 		String poNumber = "";
@@ -355,7 +360,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData);
 	}
 
-	public OrderRequestData getOrderPartData(Envelope envelope) {
+	private OrderRequestData getOrderPartData(Envelope envelope, String token) {
 		OrderRequestData ordReqData = new OrderRequestData();
 		List<OrderRequestPart> obj = new ArrayList<OrderRequestPart>();
 		List<com.alliance.ows.model.order.Line> partList = envelope.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine();
@@ -378,18 +383,13 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			}
 			ordPartData.setSelLoc(100);
 			try {
-				String token = "";
-				try {
-					token = getTokenByOrgId(getScreenName(envelope, false));
-				} catch (JSONException e1) {
-					throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
-				}
+				
 				JSONArray sellNetResponse = getSellNetworkInfo(token);
 				String networkResp = partData.getOrderItem().getOrderInfo().getSupplierLocationId();
 				if (sellNetResponse != null) {
 					for (int i = 0; i < sellNetResponse.length(); i++) {
 						JSONObject sellNet = (JSONObject) sellNetResponse.get(i);
-						if (sellNet.get("name").toString().equalsIgnoreCase(networkResp)) {
+						if (sellNet.get("called").toString().equalsIgnoreCase(networkResp)) {
 							ordPartData.setSelLoc(sellNet.getInt("seqNo"));
 							break;
 						}
@@ -410,11 +410,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return ordReqData;
 	}
 
-	public String orderRequestToSellNetwork(String requestData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
+	private String orderRequestToSellNetwork(String requestData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
 		return getSellNetworkData(requestData, sellNetworkOrderUrl, ORD, envelopeData);
 	}
 
-	public String orderRespParseToXml(String respJson, Envelope envData) throws ParserConfigurationException, TransformerException {
+	private String orderRespParseToXml(String respJson, Envelope envData) throws ParserConfigurationException, TransformerException {
 
 		OrderResponseData obj = gson.fromJson(respJson, OrderResponseData.class);
 
@@ -422,18 +422,18 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	}
 
 	/**
-	 * This method should be updated to get the token as per the OrgId and remove the hard-coded data.
-	 * @param orgId
+	 * This method will get the V3 token by screenName
+	 * @param screenName
 	 * @return token
 	 * @throws JSONException
 	 */
-	private String getTokenByOrgId(String screenName) throws JSONException {
+	private String getTokenByScreenName(String screenName) throws JSONException {
 		String json = null;
 		JSONObject loginData = new JSONObject();
 		long startTime = System.currentTimeMillis();
 		try {
 			loginData.put("username", screenName);
-			loginData.put("password", "a!Q@.3!7(ESdsj'P=P{[jaKXSw3J^9_ASkFDWdK%C*MhafxU~gims4r*5aQSG,A");
+			loginData.put("password", tokenPassword);
 			loginData.put("useSecretKey", true);
 		} catch (JSONException e1) {
 			throw new AESException(new Fault(FaultConstants.V3_TOKEN_CREATION_FAILED, new Object[] { e1.getMessage() }));
@@ -466,7 +466,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return token;
 	}
 
-	public List<InquiryRequestPart> getPartData(Envelope envelope) {
+	private List<InquiryRequestPart> getPartData(Envelope envelope) {
 		List<InquiryRequestPart> obj = new ArrayList<InquiryRequestPart>();
 		List<Line> partList = envelope.getBody().getAddReqForQuote().getDataArea().getRequestForQuote().getLine();
 		int lineNumber = 0;
@@ -507,8 +507,12 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return obj;
 	}
 	
-	// Get sellNetwork information from user token
-	public JSONArray getSellNetworkInfo(String userToken) {
+	/**
+	 * Get sellNetwork information using user token 
+	 * @param userToken
+	 * @return sellNetwork JSON Array
+	 */
+	private JSONArray getSellNetworkInfo(String userToken) {
 		String userInfo = null;
 		JSONObject userRESJSON;
 		String userJsonStr = null;
@@ -528,7 +532,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	}
 
 	@SuppressWarnings("static-access")
-	public String getTokenServiceUserInfo(String token) {
+	private String getTokenServiceUserInfo(String token) {
 		UriComponents uri = UriComponentsBuilder.newInstance().fromUriString(tokenBaseURL).path("/tokenservice/get").queryParam("token", token)
 						.build();
 		Request request = null;
