@@ -1,31 +1,31 @@
 package com.alliance.ows.controller;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 import javax.ws.rs.core.MediaType;
 
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.alliance.EchoController;
 import com.alliance.logging.UtilityLogger;
 import com.alliance.ows.service.OWSServiceInterface;
 import com.alliance.utils.ConstantsUtility;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-
 /**
  *
  * @author Krishna Kumar
  * 
  */
-@Controller
+@RestController
 @RequestMapping("/openwebs")
 @Configuration
 public class OWSController extends EchoController {
