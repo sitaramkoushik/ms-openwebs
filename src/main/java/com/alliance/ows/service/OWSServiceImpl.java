@@ -395,6 +395,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 						}
 					}
 				}
+				UtilityLogger.warn("LocationId: "+ordPartData.getSelLoc()+" for location: "+partData.getOrderItem().getOrderInfo().getSupplierLocationId());
 			} catch (Exception e) {
 				UtilityLogger.error("Exception occurred while setting setSelLoc: " + e.getMessage());
 			}
