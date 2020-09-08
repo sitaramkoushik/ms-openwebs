@@ -26,7 +26,7 @@ import com.alliance.utils.ConstantsUtility;
  * 
  */
 @RestController
-@RequestMapping("/openwebs")
+@RequestMapping("/openwebs/${owsVersion}")
 @Configuration
 public class OWSController extends EchoController {
 
