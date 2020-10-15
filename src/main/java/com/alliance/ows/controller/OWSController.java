@@ -1,6 +1,8 @@
 package com.alliance.ows.controller;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
@@ -26,7 +28,9 @@ import com.alliance.utils.ConstantsUtility;
  * 
  */
 @RestController
-@RequestMapping("/openwebs/${owsVersion}")
+@RequestMapping("/openwebs/${owsVersion:}")
+@Api(tags = "openWebs", description = "openWebs API to perform operation related to openWebs inquiry and order.")
+
 @Configuration
 public class OWSController extends EchoController {
 
@@ -34,12 +38,16 @@ public class OWSController extends EchoController {
 	private OWSServiceInterface owsService;
 
 	@SuppressWarnings("unchecked")
-	@ApiOperation(value = "HTTP POST method endpoint URI for preparing Inquiry Request", nickname = "inquiry", notes = "This endpoint will return `Inquiry Request` for sellNetworkService.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"), @ApiResponse(code = 401, message = "Unauthorized"),
+	@ApiOperation(value = "OpenWebs Request For Inquiry", nickname = "inquiry",
+					notes = "This API accepts the OpenWebs request and returns the INQ response.")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"),
+			@ApiResponse(code = 401, message = "Unauthorized"),
 			@ApiResponse(code = 403, message = "Forbidden"), @ApiResponse(code = 404, message = "Not Found") })
 	@PostMapping(value = "/inquiry", produces = { MediaType.TEXT_XML })
 	@ResponseBody
-	public String doOWSInq(@RequestBody String reqData) {
+	public String doOWSInq(
+					@ApiParam(value = "The string as `reqData` is used as payload to get inquiry request.",
+									required = true) @RequestBody String reqData) {
 		try {
 			return owsService.doOWSInq(reqData);
 		} catch (Exception e) {
@@ -52,12 +60,15 @@ public class OWSController extends EchoController {
 	}
 
 	@SuppressWarnings("unchecked")
-	@ApiOperation(value = "HTTP POST method endpoint URI for preparing Order equest", nickname = "order", notes = "This endpoint will return `Order Request` for sellNetworkService.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"), @ApiResponse(code = 401, message = "Unauthorized"),
+	@ApiOperation(value = "OpenWebs Request For Order", nickname = "order",
+					notes = "This API accepts the OpenWebs request and returns the Order response.")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"),
+			@ApiResponse(code = 401, message = "Unauthorized"),
 			@ApiResponse(code = 403, message = "Forbidden"), @ApiResponse(code = 404, message = "Not Found") })
 	@PostMapping(value = "/order", produces = { MediaType.TEXT_XML })
 	@ResponseBody
-	public String doOWSOrder(@RequestBody String reqData) {
+	public String doOWSOrder(
+					@ApiParam(value = "The string as `reqData` is used as payload to get order request.") @RequestBody String reqData) {
 		try {
 			return owsService.doOWSOrder(reqData);
 		} catch (Exception e) {
