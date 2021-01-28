@@ -10,9 +10,11 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -36,6 +38,10 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.util.Assert;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -57,6 +63,7 @@ import com.alliance.ows.model.order.OrderRequestData;
 import com.alliance.ows.model.order.OrderRequestPart;
 import com.alliance.ows.model.order.OrderResponseData;
 import com.alliance.ows.model.order.SelectOption;
+import com.alliance.sellNetwork.SellNetworkResponse;
 import com.alliance.utils.ConstantsUtility;
 import com.alliance.utils.MPFPResourceReader;
 import com.alliance.utils.RestUtil;
@@ -157,7 +164,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				Envelope envelopeData = handler.getEnvelopeData();
 
 				screenName = getScreenName(envelopeData, true);
-				//String token = getTokenByScreenName(screenName);
 				List<InquiryRequestPart> inquiryRequestParts = getPartData(envelopeData);
 				
 				actualResult = prepareOwsInqReqData(inquiryRequestParts, envelopeData);
@@ -166,7 +172,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
-			// String finalResult = prefix + actualResult + suffix;
 
 			UtilityLogger.warn("Response returning in " + (System.currentTimeMillis() - startTime) + "ms for " + screenName + ". " + finalResult);
 			return finalResult;
@@ -341,7 +346,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			String prefix = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><ProcessMessageResponse xmlns=\"http://www.carpartstechnologies.com/openwebs/\"><ProcessMessageResult>";
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
-			String screenName = getScreenName(envelopeData, false);
 			String token = "";
 			String sellnetworkUserId = "";
 			try {
@@ -360,7 +364,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			}
 			OrderRequestData orderRequestData = getOrderPartData(envelopeData, token, sellnetworkUserId);
 			
-			String actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData);			
+			String actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData, token, sellnetworkUserId);			
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
 			String finalResult = prefix + StringEscapeUtils.escapeXml(actualResult) + suffix;
@@ -377,8 +381,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 
 	@SuppressWarnings("rawtypes")
-	public String prepareOwsOrdReqData(OrderRequestData ordReqData, Envelope envelopeData) throws ParserConfigurationException, TransformerException {
-		String token = "";
+	public String prepareOwsOrdReqData(OrderRequestData ordReqData, Envelope envelopeData, String token, String sellnetworkUserId) throws ParserConfigurationException, TransformerException {
 		List<OrderRequestPart> ordReqPartList = ordReqData.getParts();
 		for (OrderRequestPart ordReqPart : ordReqPartList) {
 			ordReqPart.setAdded_to_cart(ordReqPart.getQty());
@@ -410,21 +413,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			ordReqPart.setLocations(locations);
 		}
 
-		String sellnetworkUserId = "";
-		try {
-			token = new JSONObject(TokenService.getTokenFromTokenCache(userName, password)).getJSONObject(ConstantsUtility.DATA).getString(ConstantsUtility.IDTOKEN);
-			org.json.simple.JSONObject userData = TokenService.getUserIdAndOrgIdByScreenName(getScreenName(envelopeData, false), token);
-
-			if (userData != null && userData.size() > 0 && userData.containsKey(ConstantsUtility.DATA)) {
-				HashMap data = (HashMap) userData.get(ConstantsUtility.DATA);
-				Integer userId = (Integer) data.get("userId");
-				Integer orgId = (Integer) data.get("orgId");
-				sellnetworkUserId = userId + "_" + DEVICEID + "_" + orgId;
-				createSalepadRepUserInfo(orgId, userId, DEVICEID, token);
-			}
-		} catch (JSONException e1) {
-			throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
-		}
 		ordReqData.setToken(token);
 		ordReqData.setComment("test");
 		String poNumber = "";
@@ -464,16 +452,21 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			ordPartData.setSelLoc(100);
 			try {
 				
-				JSONArray sellNetResponse = getSellNetworkInfo(token, userId);
+				JSONObject sellNetResponse = getSellNetworkInfo(token, userId);
 				String networkResp = partData.getOrderItem().getOrderInfo().getSupplierLocationId();
 				if (sellNetResponse != null) {
-					for (int i = 0; i < sellNetResponse.length(); i++) {
-						JSONObject sellNet = (JSONObject) sellNetResponse.get(i);
-						if (sellNet.get("called").toString().equalsIgnoreCase(networkResp)) {
-							ordPartData.setSelLoc(sellNet.getInt("seqNo"));
+
+					Iterator<String> locations = sellNetResponse.keys();
+					while (locations.hasNext()) {
+						String seqNo = locations.next();
+						String locData = (String) sellNetResponse.get(seqNo);
+						SellNetworkResponse sellNetwork = new Gson().fromJson(locData, SellNetworkResponse.class);
+						if (sellNetwork.getCalledDflt().equalsIgnoreCase(networkResp)) {
+							ordPartData.setSelLoc(Integer.parseInt(seqNo));
 							break;
 						}
 					}
+				
 				}
 				UtilityLogger.warn("LocationId: "+ordPartData.getSelLoc()+" for location: "+partData.getOrderItem().getOrderInfo().getSupplierLocationId());
 			} catch (Exception e) {
@@ -594,26 +587,17 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	 * @param userToken
 	 * @return sellNetwork JSON Array
 	 */
-	private JSONArray getSellNetworkInfo(String userToken, String userId) {
-		String userInfo = null;
-		JSONObject userRESJSON;
-		String userJsonStr = null;
-		JSONArray array = null;
+	private JSONObject getSellNetworkInfo(String userToken, String userId) {
+		JSONObject sellnetwork = null;
 		try {
+			setHeaderToken(userToken);
 			com.alliance.utils.UserInfo info = Utils.getUserProfile(userToken, userId);
 			String orgId = String.valueOf(info.getOrgId());
-			JSONObject sellnetwork =	UserCache.getSellNetworkInfo(orgId);
-			userInfo = URLDecoder.decode(getTokenServiceUserInfo(userToken), "UTF-8");
-			if (userInfo != null && !userInfo.isEmpty() && userInfo.contains("userInfo")) {
-				userRESJSON = new JSONObject(userInfo);
-				userJsonStr = userRESJSON.getString("userInfo");
-				JSONObject userResp = new JSONObject(userJsonStr);
-				array = userResp.getJSONArray("sellnetwork");
-			}
+			sellnetwork = UserCache.getSellNetworkInfo(orgId);
 		} catch (Exception e) {
 			UtilityLogger.error("Exception occurred while getting userInfo from token: " + e.getMessage());
 		}
-		return array;
+		return sellnetwork;
 	}
 
 	@SuppressWarnings("static-access")
@@ -667,5 +651,19 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			throw new AESException(new Fault(FaultConstants.GENERIC_ERROR, new Object[] { e.getMessage() }));
 		}
 		return json;
+	}
+	
+	private static void setHeaderToken(String token) {
+		HttpServletRequest httpRequest = null;
+		try {
+			RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+			Assert.state(requestAttributes != null, "Could not find current request via RequestContextHolder");
+			Assert.isInstanceOf(ServletRequestAttributes.class, requestAttributes);
+			httpRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
+			httpRequest.setAttribute(ConstantsUtility.AUTHORIZATION, token);
+			Assert.state(httpRequest != null, "Could not find current HttpServletRequest");
+		} catch (Exception e) {
+			UtilityLogger.error("Error while setting the Token from Header");
+		}
 	}
 }
