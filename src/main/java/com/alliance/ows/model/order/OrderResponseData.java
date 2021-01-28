@@ -15,8 +15,8 @@ public class OrderResponseData implements Serializable {
 	
 	private static final long serialVersionUID = 7687930903891755394L;
 	
-	@JsonProperty("Data")
-	private List<OrderConfirm> Data;
+	@JsonProperty("data")
+	private List<OrderConfirm> data;
 
 	@JsonProperty("status")
 	private String status;
@@ -31,10 +31,10 @@ public class OrderResponseData implements Serializable {
 
 
 	public List<OrderConfirm> getData() {
-		return Data;
+		return data;
 	}
 
 	public void setData(List<OrderConfirm> respdata) {
-		Data = respdata;
+		data = respdata;
 	}
 }

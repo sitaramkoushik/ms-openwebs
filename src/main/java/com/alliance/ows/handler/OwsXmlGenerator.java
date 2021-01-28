@@ -105,9 +105,11 @@ public class OwsXmlGenerator {
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
 		// Root element creation and Fields,Attribute setting
-		Element Envelope = doc.createElementNS("http://www.carpartstechnologies.com/openwebs-envelope", "Envelope");
+		Element Envelope = doc.createElementNS(envData.getEnvAttrOweValue(), "Envelope");
 		Envelope.setPrefix("ow-e");
-		Envelope.setAttribute("revision", "2.0");
+		
+		setNameSpaces(Envelope, envData);
+
 		// Header element data setting
 		Element Header = createElement("ow-e:Header", Envelope, doc);
 		Element EndPoints = createElement("ow-e:EndPoints", Header, doc);
@@ -136,9 +138,6 @@ public class OwsXmlGenerator {
 		// Body element data setting
 		Element Body = createElement("ow-e:Body", Envelope, doc);
 		Element AcknowledgePurchaseOrder = createElement("ow-o:AcknowledgePurchaseOrder", Body, doc);
-		AcknowledgePurchaseOrder.setAttribute("revision", "2.0");
-		AcknowledgePurchaseOrder.setAttribute("xmlns:ow-o", "http://www.carpartstechnologies.com/openwebs-oagis");
-		AcknowledgePurchaseOrder.setAttribute("xmlns:oa", "http://www.openapplications.org/oagis");
 		// ApplicationArea data setting
 		Element ApplicationArea = createElement("oa:ApplicationArea", AcknowledgePurchaseOrder, doc);
 		Element Sender = createElement("oa:Sender", ApplicationArea, doc);
@@ -253,7 +252,7 @@ public class OwsXmlGenerator {
 					Element CorePrice = createElement("ow-o:CorePrice", PriceInfo, doc);
 					Element CPAmount = createElement("oa:Amount", CorePrice, doc);
 					CPAmount.setAttribute("currency", "USD");
-					CPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getCoreCost()));
+					CPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getOrderedCoreCost()));
 
 					Element CPPerQuantity = createElement("oa:PerQuantity", CorePrice, doc);
 					CPPerQuantity.setAttribute("uom", "EACH");
@@ -279,19 +278,19 @@ public class OwsXmlGenerator {
 					Element UnitPrice = createElement("oa:UnitPrice", Line, doc);
 					Element UPAmount = createElement("oa:Amount", UnitPrice, doc);
 					UPAmount.setAttribute("currency", "USD");
-					UPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getActualCost()));
+					UPAmount.setTextContent(String.valueOf(selectOpt.getPrice().getOrderedCost()));
 
 					Element UPPerQuantity = createElement("oa:PerQuantity", UnitPrice, doc);
 					UPPerQuantity.setAttribute("uom", "EACH");
 					UPPerQuantity.setTextContent("1");
 					Element PartExtendedPrice = createElement("oa:ExtendedPrice", Line, doc);
 					PartExtendedPrice.setAttribute("currency", "");
-					extendedPrice = extendedPrice + selectOpt.getPrice().getActualCost() * selectOpt.getOrderQuantity();
-					PartExtendedPrice.setTextContent(String.valueOf(selectOpt.getPrice().getActualCost() * selectOpt.getOrderQuantity()));
-					totalPrice = totalPrice + selectOpt.getPrice().getCoreList() * selectOpt.getOrderQuantity();
+					extendedPrice = extendedPrice + selectOpt.getPrice().getOrderedCoreList() * selectOpt.getOrderQuantity();
+					PartExtendedPrice.setTextContent(String.valueOf(selectOpt.getPrice().getOrderedCoreList() * selectOpt.getOrderQuantity()));
+					totalPrice = totalPrice + selectOpt.getPrice().getOrderedCost() * selectOpt.getOrderQuantity();
 					Element PartTotalAmount = createElement("oa:TotalAmount", Line, doc);
 					PartTotalAmount.setAttribute("currency", "USD");
-					PartTotalAmount.setTextContent(String.valueOf(selectOpt.getPrice().getCoreList() * selectOpt.getOrderQuantity()));
+					PartTotalAmount.setTextContent(String.valueOf(selectOpt.getPrice().getOrderedCost() * selectOpt.getOrderQuantity()));
 
 					Element BackOrderedQuantity = createElement("oa:BackOrderedQuantity", Line, doc);
 					BackOrderedQuantity.setAttribute("uom", "EACH");
@@ -366,9 +365,11 @@ public class OwsXmlGenerator {
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.newDocument();
 		doc.setXmlStandalone(false);
-		Element Envelope = doc.createElementNS(envData.getEnvAttrValue(), "Envelope");
+		Element Envelope = doc.createElementNS(envData.getEnvAttrOweValue(), "Envelope");
 		Envelope.setPrefix("ow-e");
-		Envelope.setAttribute(envData.getEnvAttrRevName(), envData.getEnvAttrRevValue());
+
+		setNameSpaces(Envelope, envData);
+
 		// Header element data setting
 		Element Header = createElement("ow-e:Header", Envelope, doc);
 		Element EndPoints = createElement("ow-e:EndPoints", Header, doc);
@@ -395,10 +396,7 @@ public class OwsXmlGenerator {
 		createElement("ow-e:Topic", Properties, doc, "AddQuote");
 		Element Body = createElement("ow-e:Body", Envelope, doc);
 		Element AddQuote = createElement("ow-o:AddQuote", Body, doc);
-		AddQuote.setAttribute(envData.getBody().getAddReqForQuote().getRfqAttrRevName(), envData.getBody().getAddReqForQuote().getRfqAttrRevValue());
-		AddQuote.setAttribute(envData.getBody().getAddReqForQuote().getRfqAttrName(), envData.getBody().getAddReqForQuote().getRfqAttrValue());
-		AddQuote.setAttribute(envData.getBody().getAddReqForQuote().getRfqAttrOaName(), envData.getBody().getAddReqForQuote().getRfqAttrOaValue());
-
+		
 		Element ApplicationArea = createElement("oa:ApplicationArea", AddQuote, doc);
 		Element Sender = createElement("oa:Sender", ApplicationArea, doc);
 		try {
@@ -499,6 +497,18 @@ public class OwsXmlGenerator {
 
 	}
 
+	private void setNameSpaces(Element envelope, Envelope envData) {
+		if(envData.getEnvAttrOaName() != null && envData.getEnvAttrOaValue() != null){
+			envelope.setAttribute(envData.getEnvAttrOaName(), envData.getEnvAttrOaValue());
+		}
+		if(envData.getEnvAttrOwoName() != null && envData.getEnvAttrOwoValue() != null){
+			envelope.setAttribute(envData.getEnvAttrOwoName(), envData.getEnvAttrOwoValue());
+		}
+		if(envData.getEnvAttrRevName() != null && envData.getEnvAttrRevValue() != null){
+			envelope.setAttribute(envData.getEnvAttrRevName(), envData.getEnvAttrRevValue());
+		}
+	}
+
 	private void addPartResponse(Document doc, Element Quote, Envelope envData, InquiryResponsePart inqRespPartinq, SelectOption selectOp,
 					int inqLineNumber, int lineNumber) {
 		Element Line = createElement("ow-o:Line", Quote, doc);
@@ -550,8 +560,18 @@ public class OwsXmlGenerator {
 				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
 				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
 			} else {
-				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCoreCost()));
-				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getList()));
+				double coreCost = inqRespPartinq.getPrice(selectOp.getNetwork()).getCoreCost();
+				if (coreCost == 0) {
+					CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
+				} else {
+					CPAmount.setTextContent(String.valueOf(coreCost));
+				}
+				double list = inqRespPartinq.getPrice(selectOp.getNetwork()).getList();
+				if (list == 0) {
+					Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
+				} else {
+					Amount.setTextContent(String.valueOf(list));
+				}
 			}
 
 		} catch (Exception e) {
@@ -586,7 +606,13 @@ public class OwsXmlGenerator {
 			if (selectOp.getNetwork() == 100) {
 				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
 			} else {
-				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCost()));
+				double cost = inqRespPartinq.getPrice(selectOp.getNetwork()).getCost();
+				if (cost == 0) {
+					UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
+				} else {
+					UPAmount.setTextContent(String.valueOf(cost));
+				}
+
 			}
 		} catch (Exception e) {
 			UPAmount.setTextContent("0.0");
@@ -680,8 +706,8 @@ public class OwsXmlGenerator {
 				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getList()));
 				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCoreCost()));
 			} else {
-				Amount.setTextContent(String.valueOf(selectOp.getPrice().getList()));
-				CPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCoreCost()));
+				Amount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getList()));
+				CPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCoreCost()));
 			}
 		} catch (Exception e) {
 			Amount.setTextContent("0.0");
@@ -713,7 +739,7 @@ public class OwsXmlGenerator {
 			if (selectOp.getNetwork() == 100) {
 				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice100().getCost()));
 			} else {
-				UPAmount.setTextContent(String.valueOf(selectOp.getPrice().getCost()));
+				UPAmount.setTextContent(String.valueOf(inqRespPartinq.getPrice(selectOp.getNetwork()).getCost()));
 			}
 		} catch (Exception e) {
 			UPAmount.setTextContent("0.0");
