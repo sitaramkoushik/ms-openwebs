@@ -60,6 +60,8 @@ import com.alliance.ows.model.order.SelectOption;
 import com.alliance.utils.ConstantsUtility;
 import com.alliance.utils.MPFPResourceReader;
 import com.alliance.utils.RestUtil;
+import com.alliance.utils.UserCache;
+import com.alliance.utils.Utils;
 import com.google.gson.Gson;
 
 import okhttp3.Request;
@@ -133,7 +135,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
 			String actualResult = "";
-			if (bodyString.contains("ow-o:ProcessPurchaseOrder")) {
+/*			if (bodyString.contains("ow-o:ProcessPurchaseOrder")) {
 
 				UtilityLogger.warn("Order request data: " + bodyString);
 
@@ -142,12 +144,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				Envelope envelopeData = handler.getOrderReqEnvelope();
 
 				screenName = getScreenName(envelopeData, false);
-				String token = getTokenByScreenName(screenName);
 				OrderRequestData orderRequestData = getOrderPartData(envelopeData, token);
 				
 				actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData);
 
-			} else {
+			} else {*/
 
 				UtilityLogger.warn("Inquiry request data: " + bodyString);
 
@@ -156,11 +157,11 @@ public class OWSServiceImpl implements OWSServiceInterface {
 				Envelope envelopeData = handler.getEnvelopeData();
 
 				screenName = getScreenName(envelopeData, true);
-				String token = getTokenByScreenName(screenName);
+				//String token = getTokenByScreenName(screenName);
 				List<InquiryRequestPart> inquiryRequestParts = getPartData(envelopeData);
 				
 				actualResult = prepareOwsInqReqData(inquiryRequestParts, envelopeData);
-			}
+			
 
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
 
@@ -341,8 +342,23 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			String suffix = "</ProcessMessageResult></ProcessMessageResponse></soap:Body></soap:Envelope>";
 
 			String screenName = getScreenName(envelopeData, false);
-			String token = getTokenByScreenName(screenName);
-			OrderRequestData orderRequestData = getOrderPartData(envelopeData, token);
+			String token = "";
+			String sellnetworkUserId = "";
+			try {
+				token = new JSONObject(TokenService.getTokenFromTokenCache(userName, password)).getJSONObject(ConstantsUtility.DATA).getString(ConstantsUtility.IDTOKEN);
+				org.json.simple.JSONObject userData = TokenService.getUserIdAndOrgIdByScreenName(getScreenName(envelopeData, false), token);
+
+				if (userData != null && userData.size() > 0 && userData.containsKey(ConstantsUtility.DATA)) {
+					HashMap data = (HashMap) userData.get(ConstantsUtility.DATA);
+					Integer userId = (Integer) data.get("userId");
+					Integer orgId = (Integer) data.get("orgId");
+					sellnetworkUserId = userId + "_" + DEVICEID + "_" + orgId;
+					createSalepadRepUserInfo(orgId, userId, DEVICEID, token);
+				}
+			} catch (JSONException e1) {
+				throw new AESException(new Fault(FaultConstants.OWS_GENERIC_ERROR, new Object[] { e1.getMessage() }));
+			}
+			OrderRequestData orderRequestData = getOrderPartData(envelopeData, token, sellnetworkUserId);
 			
 			String actualResult = prepareOwsOrdReqData(orderRequestData, envelopeData);			
 			actualResult = actualResult.replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
@@ -424,7 +440,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData, token, sellnetworkUserId);
 	}
 
-	private OrderRequestData getOrderPartData(Envelope envelope, String token) {
+	private OrderRequestData getOrderPartData(Envelope envelope, String token, String userId) {
 		OrderRequestData ordReqData = new OrderRequestData();
 		List<OrderRequestPart> obj = new ArrayList<OrderRequestPart>();
 		List<com.alliance.ows.model.order.Line> partList = envelope.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getLine();
@@ -448,7 +464,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			ordPartData.setSelLoc(100);
 			try {
 				
-				JSONArray sellNetResponse = getSellNetworkInfo(token);
+				JSONArray sellNetResponse = getSellNetworkInfo(token, userId);
 				String networkResp = partData.getOrderItem().getOrderInfo().getSupplierLocationId();
 				if (sellNetResponse != null) {
 					for (int i = 0; i < sellNetResponse.length(); i++) {
@@ -578,12 +594,15 @@ public class OWSServiceImpl implements OWSServiceInterface {
 	 * @param userToken
 	 * @return sellNetwork JSON Array
 	 */
-	private JSONArray getSellNetworkInfo(String userToken) {
+	private JSONArray getSellNetworkInfo(String userToken, String userId) {
 		String userInfo = null;
 		JSONObject userRESJSON;
 		String userJsonStr = null;
 		JSONArray array = null;
 		try {
+			com.alliance.utils.UserInfo info = Utils.getUserProfile(userToken, userId);
+			String orgId = String.valueOf(info.getOrgId());
+			JSONObject sellnetwork =	UserCache.getSellNetworkInfo(orgId);
 			userInfo = URLDecoder.decode(getTokenServiceUserInfo(userToken), "UTF-8");
 			if (userInfo != null && !userInfo.isEmpty() && userInfo.contains("userInfo")) {
 				userRESJSON = new JSONObject(userInfo);
