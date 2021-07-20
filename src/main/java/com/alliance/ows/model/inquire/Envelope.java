@@ -7,12 +7,16 @@ public class Envelope {
 	private Header header;
 	private Body body;
 	private OrdBody ordBody;
-	private OrdHeader ordHeader ;
-	private String envAttrName;
-	private String envAttrValue;
+	private OrdHeader ordHeader;
+	private String envAttrOweName;
+	private String envAttrOweValue;
 	private String envAttrRevName;
 	private String envAttrRevValue;
-	
+	private String envAttrOaName;
+	private String envAttrOaValue;
+	private String envAttrOwoName;
+	private String envAttrOwoValue;
+
 	public OrdBody getOrdBody() {
 		return ordBody;
 	}
@@ -21,29 +25,12 @@ public class Envelope {
 		this.ordBody = ordBody;
 	}
 
-
 	public OrdHeader getOrdHeader() {
 		return ordHeader;
 	}
 
 	public void setOrdHeader(OrdHeader ordHeader) {
 		this.ordHeader = ordHeader;
-	}
-
-	public String getEnvAttrName() {
-		return envAttrName;
-	}
-
-	public void setEnvAttrName(String envAttrName) {
-		this.envAttrName = envAttrName;
-	}
-
-	public String getEnvAttrValue() {
-		return envAttrValue;
-	}
-
-	public void setEnvAttrValue(String envAttrValue) {
-		this.envAttrValue = envAttrValue;
 	}
 
 	public String getEnvAttrRevName() {
@@ -76,5 +63,53 @@ public class Envelope {
 
 	public void setBody(Body body) {
 		this.body = body;
+	}
+
+	public String getEnvAttrOaName() {
+		return envAttrOaName;
+	}
+
+	public void setEnvAttrOaName(String envAttrOaName) {
+		this.envAttrOaName = envAttrOaName;
+	}
+
+	public String getEnvAttrOaValue() {
+		return envAttrOaValue;
+	}
+
+	public void setEnvAttrOaValue(String envAttrOaValue) {
+		this.envAttrOaValue = envAttrOaValue;
+	}
+
+	public String getEnvAttrOweName() {
+		return envAttrOweName;
+	}
+
+	public void setEnvAttrOweName(String envAttrOweName) {
+		this.envAttrOweName = envAttrOweName;
+	}
+
+	public String getEnvAttrOweValue() {
+		return envAttrOweValue;
+	}
+
+	public void setEnvAttrOweValue(String envAttrOweValue) {
+		this.envAttrOweValue = envAttrOweValue;
+	}
+
+	public String getEnvAttrOwoName() {
+		return envAttrOwoName;
+	}
+
+	public void setEnvAttrOwoName(String envAttrOwoName) {
+		this.envAttrOwoName = envAttrOwoName;
+	}
+
+	public String getEnvAttrOwoValue() {
+		return envAttrOwoValue;
+	}
+
+	public void setEnvAttrOwoValue(String envAttrOwoValue) {
+		this.envAttrOwoValue = envAttrOwoValue;
 	}
 }

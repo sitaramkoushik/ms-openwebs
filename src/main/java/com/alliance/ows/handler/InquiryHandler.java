@@ -111,24 +111,24 @@ public class InquiryHandler extends DefaultHandler {
 
 	@Override
 	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-		if (prefix.equalsIgnoreCase("ow-e")) {
-			envelopeData = new Envelope();
-			envelopeData.setEnvAttrName("xmlns:" + prefix);
-			envelopeData.setEnvAttrValue(uri);
-		} else if (prefix.equalsIgnoreCase("ow-o")) {
-			if (addReqForQuote == null) {
-				addReqForQuote = new AddRequestForQuote();
-			}
-			addReqForQuote.setRfqAttrName("xmlns:" + prefix);
-			addReqForQuote.setRfqAttrValue(uri);
-		} else if (prefix.equalsIgnoreCase("oa")) {
-			if (addReqForQuote == null) {
-				addReqForQuote = new AddRequestForQuote();
-			}
-			addReqForQuote.setRfqAttrOaName("xmlns:" + prefix);
-			addReqForQuote.setRfqAttrOaValue(uri);
-		}
 
+		if (envelopeData == null) {
+			envelopeData = new Envelope();
+		}
+		if (addReqForQuote == null) {
+			addReqForQuote = new AddRequestForQuote();
+		}
+		if (prefix.equalsIgnoreCase("ow-e")) {
+			envelopeData.setEnvAttrOweName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOweValue(uri);
+
+		} else if (prefix.equalsIgnoreCase("ow-o")) {
+			envelopeData.setEnvAttrOwoName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOwoValue(uri);
+		} else if (prefix.equalsIgnoreCase("oa")) {
+			envelopeData.setEnvAttrOaName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOaValue(uri);
+		}
 	}
 
 	@Override
@@ -300,9 +300,10 @@ public class InquiryHandler extends DefaultHandler {
 			String name = attributes.getQName(i);
 			String value = attributes.getValue(name);
 
-			if (qName.equalsIgnoreCase("ow-o:AddRequestForQuote") && name.equalsIgnoreCase("revision")) {
-				addReqForQuote.setRfqAttrRevName(name);
-				addReqForQuote.setRfqAttrRevValue(value);
+			if ((envelopeData.getEnvAttrRevName() == null || envelopeData.getEnvAttrRevValue() == null)
+							&& qName.equalsIgnoreCase("ow-o:AddRequestForQuote") && name.equalsIgnoreCase("revision")) {
+				envelopeData.setEnvAttrRevName(name);
+				envelopeData.setEnvAttrRevValue(value);
 			} else if (name.equalsIgnoreCase("confirm")) {
 				dataArea.setAddAttrName(name);
 				dataArea.setAddAttrVal(value);

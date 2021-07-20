@@ -14,14 +14,14 @@ public class InquiryResponseData implements Serializable {
 
 	private static final long serialVersionUID = 6268558842179369248L;
 	
-	@JsonProperty("Data")
-	private List<InquiryResponsePart> Data;
+	@JsonProperty("data")
+	private List<InquiryResponsePart> data;
 
 	public List<InquiryResponsePart> getData() {
-		return Data;
+		return data;
 	}
 
 	public void setData(List<InquiryResponsePart> respdata) {
-		Data = respdata;
+		data = respdata;
 	}
 }

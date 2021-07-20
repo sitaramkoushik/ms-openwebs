@@ -118,29 +118,25 @@ public class OrderHandler extends DefaultHandler {
 
 	@Override
 	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-		
-		if (prefix.equalsIgnoreCase("ow-e")) {
+
+		if (envelopeData == null) {
 			envelopeData = new Envelope();
-			envelopeData.setEnvAttrName("xmlns:" + prefix);
-			envelopeData.setEnvAttrValue(uri);
-		} else if (prefix.equalsIgnoreCase("ow-o")) {
-
-			if (processPurchaseOrder == null) {
-				processPurchaseOrder = new ProcessPurchaseOrder();
-			}
-			
-			processPurchaseOrder.setPpoAttrName("xmlns:" + prefix);
-			processPurchaseOrder.setPpoAttrValue(uri);
-		} else if (prefix.equalsIgnoreCase("oa")) {
-
-			if (processPurchaseOrder == null) {
-				processPurchaseOrder = new ProcessPurchaseOrder();
-			}
-			
-			processPurchaseOrder.setPpoAttrOaName("xmlns:" + prefix);
-			processPurchaseOrder.setPpoAttrOaValue(uri);
 		}
 
+		if (processPurchaseOrder == null) {
+			processPurchaseOrder = new ProcessPurchaseOrder();
+		}
+		
+		if (prefix.equalsIgnoreCase("ow-e")) {
+			envelopeData.setEnvAttrOweName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOweValue(uri);
+		} else if (prefix.equalsIgnoreCase("ow-o")) {
+			envelopeData.setEnvAttrOwoName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOwoValue(uri);
+		} else if (prefix.equalsIgnoreCase("oa")) {
+			envelopeData.setEnvAttrOaName("xmlns:" + prefix);
+			envelopeData.setEnvAttrOaValue(uri);
+		}
 	}
 
 	@Override
@@ -328,9 +324,10 @@ public class OrderHandler extends DefaultHandler {
 			String name = attributes.getQName(i);
 			String value = attributes.getValue(name);
 
-			if (qName.equalsIgnoreCase("ow-o:ProcessPurchaseOrder") && name.equalsIgnoreCase("revision")) {
-				processPurchaseOrder.setPpoAttrRevName(name);
-				processPurchaseOrder.setPpoAttrRevValue(value);
+			if ((envelopeData.getEnvAttrRevName() == null || envelopeData.getEnvAttrRevValue() == null)
+							&& qName.equalsIgnoreCase("ow-o:ProcessPurchaseOrder") && name.equalsIgnoreCase("revision")) {
+				envelopeData.setEnvAttrRevName(name);
+				envelopeData.setEnvAttrRevValue(value);
 			} else if (name.equalsIgnoreCase("confirm")) {
 				dataArea.setProcessAttrName(name);
 				dataArea.setProcessAttrValue(value);
