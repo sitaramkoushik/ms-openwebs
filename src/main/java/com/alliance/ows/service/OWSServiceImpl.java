@@ -250,7 +250,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			HttpClient httpClient = HttpClients.createDefault();
 			StringEntity stringEntity = new StringEntity(requestData);
 			httpPost.addHeader(ConstantsUtility.AUTHORIZATION, token);
-			httpPost.addHeader("Content-type", "application/json");
+			stringEntity.setContentType("application/json");
 			httpPost.setEntity(stringEntity);
 			httpPost.getRequestLine();
 			httpPost.setConfig(requestConfig);
@@ -414,16 +414,17 @@ public class OWSServiceImpl implements OWSServiceInterface {
 
 		ordReqData.setToken(token);
 		ordReqData.setComment("test");
-		String poNumber = "";
+		String poNumber = " ";
 		try {
 			poNumber = envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getDocuments()
 							.getCustomerDocumentId().getId();
 		} catch (Exception e) {
-			poNumber = "";
+			poNumber = " ";
 		}
 		ordReqData.setPoNumber(poNumber);
 		ordReqData.setService("OpenWebs");
 		ordReqData.setScat("99");
+		ordReqData.setTestOrder(true);
 		return orderRequestToSellNetwork(gson.toJson(ordReqData), envelopeData, token, sellnetworkUserId);
 	}
 
