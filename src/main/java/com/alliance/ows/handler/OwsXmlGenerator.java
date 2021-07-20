@@ -173,8 +173,12 @@ public class OwsXmlGenerator {
 		Element oaDocumentIds = createElement("oa:DocumentIds", PurchaseOrderDocumentReference, doc);
 		Element CustomerDocumentId = createElement("oa:CustomerDocumentId", oaDocumentIds, doc);
 
-		createElement("oa:Id", CustomerDocumentId, doc, envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder()
-						.getOwoHeader().getDocuments().getCustomerDocumentId().getId());
+		try {
+			createElement("oa:Id", CustomerDocumentId, doc, envData.getOrdBody().getProcessPurchaseOrder().getDataArea()
+							.getPurchaseOrder().getOwoHeader().getDocuments().getCustomerDocumentId().getId());
+		} catch (Exception e) {
+			createElement("oa:Id", ApplicationArea, doc, "");
+		}
 
 		Element DocumentId = createElement("oa:DocumentId", oaDocumentIds, doc);
 		createElement("oa:Id", DocumentId, doc, envData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader()
