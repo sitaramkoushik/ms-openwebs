@@ -250,6 +250,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			HttpClient httpClient = HttpClients.createDefault();
 			StringEntity stringEntity = new StringEntity(requestData);
 			httpPost.addHeader(ConstantsUtility.AUTHORIZATION, token);
+			httpPost.addHeader("Content-type", "application/json");
 			httpPost.setEntity(stringEntity);
 			httpPost.getRequestLine();
 			httpPost.setConfig(requestConfig);
@@ -258,10 +259,8 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return response;
 	}
-
 
 	public String inqRequestToSellNetwork(String requestData, Envelope envelopeData, String token, String userId) {
 		return getSellNetworkData(requestData, sellNetworkInqUrl, INQ, envelopeData, token, userId);
