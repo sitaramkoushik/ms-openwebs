@@ -420,7 +420,7 @@ public class OWSServiceImpl implements OWSServiceInterface {
 			poNumber = envelopeData.getOrdBody().getProcessPurchaseOrder().getDataArea().getPurchaseOrder().getOwoHeader().getDocuments()
 							.getCustomerDocumentId().getId();
 		} catch (Exception e) {
-			poNumber = "testPO";
+			poNumber = "";
 		}
 		ordReqData.setPoNumber(poNumber);
 		ordReqData.setService("OpenWebs");
@@ -617,7 +617,6 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		return userData;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static String createSalepadRepUserInfo(Integer orgId, Integer userId, String deviceId, String token) throws JSONException {
 		String json = null;
 		JSONObject loginData = new JSONObject();
