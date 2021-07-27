@@ -21,6 +21,7 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -421,6 +422,8 @@ public class OWSServiceImpl implements OWSServiceInterface {
 		} catch (Exception e) {
 			poNumber = " ";
 		}
+		
+		poNumber = StringUtils.isNotEmpty(poNumber) ? poNumber : " ";
 		ordReqData.setPoNumber(poNumber);
 		ordReqData.setService("OpenWebs");
 		ordReqData.setScat("99");
