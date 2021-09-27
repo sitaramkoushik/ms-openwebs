@@ -24,11 +24,11 @@ import com.alliance.utils.ConstantsUtility;
 
 /**
  *
- * @author Krishna Kumar
+ * @author ManikantaReddy
  * 
  */
 @RestController
-@RequestMapping("/openwebs/${owsVersion:}")
+@RequestMapping("/openwebs/${VERSION}")
 @Api(tags = "openWebs", description = "openWebs API to perform operation related to openWebs inquiry and order.")
 
 @Configuration
@@ -38,16 +38,15 @@ public class OWSController extends EchoController {
 	private OWSServiceInterface owsService;
 
 	@SuppressWarnings("unchecked")
-	@ApiOperation(value = "OpenWebs Request For Inquiry", nickname = "inquiry",
-					notes = "This API accepts the OpenWebs request and returns the INQ response.")
+	@ApiOperation(value = "OpenWebs Request For Inquiry", nickname = "inquiry", notes = "This API accepts the OpenWebs request and returns the INQ response.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"),
-			@ApiResponse(code = 401, message = "Unauthorized"),
-			@ApiResponse(code = 403, message = "Forbidden"), @ApiResponse(code = 404, message = "Not Found") })
+			@ApiResponse(code = 401, message = "Unauthorized"), @ApiResponse(code = 403, message = "Forbidden"),
+			@ApiResponse(code = 404, message = "Not Found") })
 	@PostMapping(value = "/inquiry", produces = { MediaType.TEXT_XML })
 	@ResponseBody
 	public String doOWSInq(
-					@ApiParam(value = "The string as `reqData` is used as payload to get inquiry request.",
-									required = true) @RequestBody String reqData) {
+					@ApiParam(value = "The string as `reqData` is used as payload to get inquiry request.", required = true)
+					@RequestBody String reqData) {
 		try {
 			return owsService.doOWSInq(reqData);
 		} catch (Exception e) {
@@ -60,15 +59,14 @@ public class OWSController extends EchoController {
 	}
 
 	@SuppressWarnings("unchecked")
-	@ApiOperation(value = "OpenWebs Request For Order", nickname = "order",
-					notes = "This API accepts the OpenWebs request and returns the Order response.")
+	@ApiOperation(value = "OpenWebs Request For Order", nickname = "order", notes = "This API accepts the OpenWebs request and returns the Order response.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "OK"),
-			@ApiResponse(code = 401, message = "Unauthorized"),
-			@ApiResponse(code = 403, message = "Forbidden"), @ApiResponse(code = 404, message = "Not Found") })
+			@ApiResponse(code = 401, message = "Unauthorized"), @ApiResponse(code = 403, message = "Forbidden"),
+			@ApiResponse(code = 404, message = "Not Found") })
 	@PostMapping(value = "/order", produces = { MediaType.TEXT_XML })
 	@ResponseBody
-	public String doOWSOrder(
-					@ApiParam(value = "The string as `reqData` is used as payload to get order request.") @RequestBody String reqData) {
+	public String doOWSOrder(@ApiParam(value = "The string as `reqData` is used as payload to get order request.")
+	@RequestBody String reqData) {
 		try {
 			return owsService.doOWSOrder(reqData);
 		} catch (Exception e) {
